@@ -1,0 +1,135 @@
+/* ============================================================
+   Race Schedule Styles
+   ============================================================ */
+
+.race-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-5);
+}
+
+.race-card {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-base);
+  cursor: default;
+}
+
+.race-card-past {
+  opacity: 0.6;
+}
+
+.race-card-past:hover {
+  opacity: 1;
+}
+
+.race-card-next {
+  border-color: var(--border-accent) !important;
+  box-shadow: 0 0 30px var(--accent-glow);
+  opacity: 1;
+}
+
+.race-card-next::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--f1-red), #ff4444);
+}
+
+.race-next-badge {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--f1-red);
+  background: rgba(225, 6, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  animation: livePulse 2s infinite;
+}
+
+.race-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.race-round {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.15em;
+}
+
+.race-flag {
+  font-size: 1.8rem;
+}
+
+.race-card-name {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin-top: var(--space-2);
+  color: var(--text-primary);
+}
+
+.race-card-circuit {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.race-card-location {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.race-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.race-card-date {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.race-results-btn {
+  font-size: var(--text-xs) !important;
+  padding: 2px 10px !important;
+}
+
+.race-card-countdown {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--f1-red);
+}
+
+.race-card-checkmark {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--success);
+  font-weight: 700;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .race-grid {
+    grid-template-columns: 1fr;
+  }
+}

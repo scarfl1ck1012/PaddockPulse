@@ -1,0 +1,28 @@
+/* Session Picker */
+.session-picker {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  max-width: 280px;
+}
+
+.session-picker:focus {
+  border-color: var(--border-medium);
+}
+
+.session-picker option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.session-picker optgroup {
+  font-weight: 700;
+  color: var(--text-muted);
+}

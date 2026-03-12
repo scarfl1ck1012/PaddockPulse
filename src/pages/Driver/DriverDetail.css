@@ -1,0 +1,241 @@
+/* ============================================================
+   Driver Detail Page Styles
+   ============================================================ */
+
+.back-link {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+.back-link:hover {
+  color: var(--text-primary);
+}
+
+/* Hero Card */
+.driver-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--space-8);
+}
+
+.hero-color-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.hero-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-6);
+  flex-wrap: wrap;
+}
+
+.hero-headshot {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  background: var(--bg-tertiary);
+  flex-shrink: 0;
+}
+
+.hero-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.hero-number {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 900;
+  opacity: 0.7;
+}
+
+.hero-name {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  margin: var(--space-1) 0;
+  background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-team {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.hero-stats {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Charts Grid */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.chart-panel {
+  padding: var(--space-4);
+}
+
+.chart-panel-sector {
+  grid-column: auto;
+}
+
+.chart-title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+}
+
+.chart-empty {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-8) 0;
+}
+
+/* Stint Timeline */
+.stint-panel {
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.stint-timeline {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.stint-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-md);
+  min-width: 60px;
+}
+
+.stint-compound .tyre-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.stint-laps {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.stint-meta {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Pit Stops Table */
+.pit-panel {
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.pit-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pit-table-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 100px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.pit-table-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 100px;
+  font-size: var(--text-sm);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.pit-table-row:last-child {
+  border-bottom: none;
+}
+
+.pit-stop-num {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pit-dur {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-info {
+    flex-direction: column;
+    text-align: center;
+  }
+  .hero-stats {
+    justify-content: center;
+  }
+}

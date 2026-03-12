@@ -1,0 +1,278 @@
+/* ============================================================
+   Race Replay Page Styles
+   ============================================================ */
+
+/* Controls */
+.replay-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.replay-btn {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  background: var(--f1-red);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.replay-btn:hover {
+  background: #ff2020;
+  transform: scale(1.02);
+}
+
+.replay-slider-wrap {
+  flex: 1;
+  position: relative;
+  height: 6px;
+}
+
+.replay-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+}
+
+.replay-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--f1-red);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(225, 6, 0, 0.4);
+}
+
+.replay-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--f1-red), #ff4444);
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.replay-lap-display {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.replay-lap-current {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.replay-lap-total {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.replay-step-btns {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.step-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all var(--transition-fast);
+}
+
+.step-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* Position Board */
+.replay-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.replay-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  animation: slideIn 0.3s ease forwards;
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.replay-podium {
+  border-left: 3px solid var(--team-color, var(--border-subtle));
+}
+
+.replay-pit {
+  background: rgba(255, 165, 0, 0.05) !important;
+}
+
+.replay-pos {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: var(--text-lg);
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: center;
+}
+
+.replay-podium .replay-pos {
+  color: var(--text-primary);
+}
+
+.replay-team-bar {
+  width: 3px;
+  height: 24px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.replay-driver-info {
+  min-width: 160px;
+}
+
+.replay-driver-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.replay-driver-code {
+  font-family: var(--font-heading);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+/* Sectors */
+.replay-sectors {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sector-val {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  min-width: 52px;
+  text-align: center;
+  padding: 2px 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sector-best {
+  color: #a855f7 !important;
+  background: rgba(168, 85, 247, 0.1);
+  font-weight: 700;
+}
+
+.replay-time {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 72px;
+  text-align: right;
+}
+
+.replay-gap {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  min-width: 60px;
+  text-align: right;
+}
+
+.replay-tyre {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.55rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.replay-pit-badge {
+  font-family: var(--font-heading);
+  font-size: 0.5rem;
+  font-weight: 800;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.12);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.08em;
+}
+
+.replay-speed {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Empty State */
+.replay-empty {
+  padding: var(--space-12);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.replay-empty-icon { font-size: 3rem; opacity: 0.4; }
+.replay-empty h3 { font-size: var(--text-lg); color: var(--text-primary); }
+.replay-empty p { font-size: var(--text-sm); color: var(--text-muted); }
+
+/* Responsive */
+@media (max-width: 960px) {
+  .replay-sectors { display: none; }
+  .replay-speed { display: none; }
+  .replay-controls { flex-wrap: wrap; }
+}
