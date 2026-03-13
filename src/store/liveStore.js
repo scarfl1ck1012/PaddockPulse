@@ -1,20 +1,54 @@
 import { create } from 'zustand';
 
-export const useLiveStore = create((set) => ({
+const useLiveStore = create((set) => ({
+  // Session metadata
   isLive: false,
-  sessionKey: null,
-  sessionType: null,
-  sessionName: null,
-  circuitName: null,
-  drivers: [],
-  positions: {}, // map of driver number to position data [{date, x, y, z}]
-  intervals: [], // latest intervals per driver
-  laps: [], // all laps per driver
-  stints: [], // tyre stints
-  radioClips: [], // team radio
-  raceControl: [], // race control messages
-  weather: null, // latest weather
-  isLoading: true,
+  sessionInfo: null,
   
-  setLiveState: (stateUpdate) => set((state) => ({ ...state, ...stateUpdate })),
+  // High-frequency live data
+  leaderboard: [],
+  positions: {},
+  weather: null,
+  raceControlMessages: [],
+  teamRadios: [],
+  
+  // Actions
+  setSessionStatus: (isLive, sessionInfo) => set({ isLive, sessionInfo }),
+  
+  updateLeaderboard: (drivers) => set({ leaderboard: drivers }),
+  
+  updatePositions: (newPositions) => set((state) => ({
+    positions: { ...state.positions, ...newPositions }
+  })),
+  
+  setWeather: (weatherData) => set({ weather: weatherData }),
+  
+  addRaceControlMessage: (message) => set((state) => {
+    // Avoid duplicates based on date
+    const exists = state.raceControlMessages.some(m => m.date === message.date);
+    if (exists) return state;
+    return {
+      raceControlMessages: [message, ...state.raceControlMessages].slice(0, 100)
+    };
+  }),
+  
+  addTeamRadio: (radio) => set((state) => {
+    // Avoid duplicates based on date
+    const exists = state.teamRadios.some(r => r.date === radio.date);
+    if (exists) return state;
+    return {
+      teamRadios: [radio, ...state.teamRadios].slice(0, 50)
+    };
+  }),
+
+  // Reset store (useful between sessions)
+  resetLiveState: () => set({
+    leaderboard: [],
+    positions: {},
+    weather: null,
+    raceControlMessages: [],
+    teamRadios: []
+  })
 }));
+
+export default useLiveStore;

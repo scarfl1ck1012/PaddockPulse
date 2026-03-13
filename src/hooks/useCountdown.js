@@ -1,46 +1,43 @@
-import { useState, useEffect } from 'react';
-import { dayjs } from '../utils/formatters';
+import { useState, useEffect, useMemo } from 'react';
 
-export const useCountdown = (targetDate) => {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    isExpired: true
-  });
+export default function useCountdown(targetDateStr) {
+  const targetTime = useMemo(() => new Date(targetDateStr).getTime(), [targetDateStr]);
+  const [timeLeft, setTimeLeft] = useState(targetTime - Date.now());
 
   useEffect(() => {
-    if (!targetDate) return;
+    if (!targetTime || isNaN(targetTime)) return;
+    
+    // Initial diff
+    setTimeLeft(targetTime - Date.now());
 
-    const target = dayjs(targetDate);
-
-    const calculateTimeLeft = () => {
-      const now = dayjs();
-      const diff = target.diff(now);
-
-      if (diff <= 0) {
-        return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+    const intervalId = setInterval(() => {
+      const newTimeLeft = targetTime - Date.now();
+      if (newTimeLeft <= 0) {
+        clearInterval(intervalId);
+        setTimeLeft(0);
+      } else {
+        setTimeLeft(newTimeLeft);
       }
-
-      const duration = dayjs.duration(diff);
-      return {
-        days: Math.floor(duration.asDays()),
-        hours: duration.hours(),
-        minutes: duration.minutes(),
-        seconds: duration.seconds(),
-        isExpired: false
-      };
-    };
-
-    setTimeLeft(calculateTimeLeft());
-
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [targetDate]);
+    return () => clearInterval(intervalId);
+  }, [targetTime]);
 
-  return timeLeft;
-};
+  const isExpired = timeLeft <= 0;
+
+  // Format the time left
+  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+  return {
+    isExpired,
+    days,
+    hours,
+    minutes,
+    seconds,
+    totalMilliseconds: Math.max(0, timeLeft), // ensure we don't go negative
+    formattedString: isExpired ? "STARTED" : `${days}d ${hours}h ${minutes}m ${seconds}s`
+  };
+}

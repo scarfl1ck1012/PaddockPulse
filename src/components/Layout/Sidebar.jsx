@@ -5,30 +5,27 @@ const NAV_GROUPS = [
   {
     label: null,
     items: [
-      { path: '/', label: 'Dashboard', icon: '🏠', exact: true },
+      { path: '/', label: 'Home', icon: '🏠', exact: true },
     ],
   },
   {
     label: 'LIVE SESSION',
     items: [
       { path: '/live', label: 'Live Timing', icon: '🔴' },
-      { path: '/radio', label: 'Team Radio', icon: '📻' },
-      { path: '/weather', label: 'Weather', icon: '🌤️' },
     ],
   },
   {
     label: 'ANALYSIS',
     items: [
       { path: '/compare', label: 'Compare', icon: '⚔️' },
-      { path: '/strategy', label: 'Strategy', icon: '🧠' },
-      { path: '/track-map', label: 'Track Map', icon: '🗺️' },
-      { path: '/replay', label: 'Race Replay', icon: '🎬' },
+      { path: '/recap', label: 'Race Recap', icon: '🎬' },
+      { path: '/learn', label: 'F1 Learn', icon: '📚' },
     ],
   },
   {
     label: 'CHAMPIONSHIP',
     items: [
-      { path: '/standings/drivers', label: 'Standings', icon: '🏆', match: '/standings' },
+      { path: '/standings', label: 'Standings', icon: '🏆', match: '/standings' },
       { path: '/schedule', label: 'Schedule', icon: '📅', match: '/schedule' },
       { path: '/results', label: 'Results', icon: '🏁' },
     ],
@@ -51,7 +48,7 @@ export default function Sidebar({ onNavigate }) {
         <div className="sidebar-logo">
           <span className="logo-icon">🏎️</span>
           <div className="logo-text">
-            <span className="logo-title">PitWall</span>
+            <span className="logo-title">PaddockPulse</span>
             <span className="logo-sub">F1 Companion</span>
           </div>
         </div>

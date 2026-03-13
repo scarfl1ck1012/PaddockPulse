@@ -1,0 +1,74 @@
+.lap-comparison-chart {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.lap-comparison-chart.empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.chart-header h4 {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+}
+
+.chart-container {
+  flex: 1;
+  width: 100%;
+  min-height: 250px;
+}
+
+/* Custom Tooltip Styling */
+.custom-tooltip {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.tooltip-lap {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 2px;
+}
+
+.tooltip-drivers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.tooltip-name {
+  font-family: var(--font-sans);
+}
+
+.tooltip-time {
+  font-family: var(--font-mono);
+  color: white; /* Let the name be team colored, but time be white for readability */
+}
+
+/* Recharts overrides */
+.f1-line-chart .recharts-cartesian-grid-horizontal line {
+  stroke-dasharray: 4 4;
+}

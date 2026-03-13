@@ -1,34 +1,26 @@
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
-import duration from 'dayjs/plugin/duration.js';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(duration);
-
+/**
+ * Formats seconds into M:SS.mmm (e.g., 82.123 -> 1:22.123)
+ */
 export const formatLapTime = (seconds) => {
-  if (!seconds || isNaN(seconds)) return "";
+  if (!seconds || isNaN(seconds)) return '';
   const mins = Math.floor(seconds / 60);
-  const secs = (seconds % 60).toFixed(3).padStart(6, '0');
-  return mins > 0 ? `${mins}:${secs}` : secs;
+  const secs = (seconds % 60).toFixed(3);
+  return mins > 0 ? `${mins}:${secs.padStart(6, '0')}` : secs;
 };
 
+/**
+ * Formats a gap/interval in seconds (e.g., +2.345)
+ */
 export const formatGap = (seconds) => {
-  if (!seconds || isNaN(seconds)) return "";
-  if (seconds > 100) return "1 LAP"; // Simplified check for lapped cars, ideally we'd get boolean from API
+  if (!seconds || isNaN(seconds)) return '';
+  if (seconds >= 60) return `+${formatLapTime(seconds)}`;
   return `+${seconds.toFixed(3)}`;
 };
 
-export const formatSector = (ms) => {
-  if (!ms) return "";
-  const secs = ms / 1000;
-  return secs.toFixed(3);
+/**
+ * Capitalizes the first letter of a string.
+ */
+export const capitalize = (str) => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
 };
-
-export const toIST = (utcString) => {
-  if (!utcString) return "";
-  return dayjs(utcString).tz("Asia/Kolkata");
-};
-
-export { dayjs };

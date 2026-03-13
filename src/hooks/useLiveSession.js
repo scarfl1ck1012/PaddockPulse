@@ -1,173 +1,92 @@
 import { useEffect, useRef } from 'react';
-import { useLiveStore } from '../store/liveStore';
-import { 
-  fetchLatestSession, 
-  fetchDrivers, 
-  fetchPositions, 
-  fetchIntervals, 
-  fetchLaps, 
-  fetchStints, 
-  fetchWeather, 
-  fetchRaceControl, 
-  fetchTeamRadio 
-} from '../api/openf1';
-import { dayjs } from '../utils/formatters';
+import useLiveStore from '../store/liveStore';
 
-export const useLiveSession = () => {
-  const state = useLiveStore();
-  const { isLive, sessionKey, setLiveState } = state;
-  const pollingIntervalRef = useRef(null);
-  const isInitialMount = useRef(true);
+const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
 
-  const checkLiveStatus = async () => {
-    if (!isInitialMount.current) return;
-    isInitialMount.current = false;
-    
-    try {
-      const sessions = await fetchLatestSession();
-      if (!sessions || sessions.length === 0) {
-        setLiveState({ isLive: false, isLoading: false });
-        return;
-      }
-
-      // Latest session
-      const session = sessions[sessions.length - 1]; // Often the last in the array is the most recent
-      const now = dayjs();
-      
-      // Determine if active
-      let active = false;
-      const startTime = session.date_start ? dayjs(session.date_start) : null;
-      const endTime = session.date_end ? dayjs(session.date_end) : null;
-
-      if (startTime && now.isAfter(startTime)) {
-        if (!endTime || now.isBefore(endTime)) {
-            active = true;
+export default function useLiveSession() {
+  const { isLive, setSessionStatus, updatePositions, setWeather, addRaceControlMessage, addTeamRadio } = useLiveStore();
+  const pollIntervalRef = useRef(null);
+  
+  // 1. Check if a session is currently live
+  useEffect(() => {
+    const checkLiveSession = async () => {
+      try {
+        const res = await fetch(`${OPENF1_BASE_URL}/sessions?session_key=latest`);
+        const data = await res.json();
+        
+        if (data && data.length > 0) {
+          const session = data[0];
+          // Simple heuristic: if end date is in the future or not set, it's live
+          const now = new Date();
+          const endDate = session.date_end ? new Date(session.date_end) : null;
+          
+          if (!endDate || now < endDate) {
+            setSessionStatus(true, session);
+          } else {
+            setSessionStatus(false, session);
+          }
         }
+      } catch (error) {
+        console.error("Failed to check live session status:", error);
       }
+    };
 
-      setLiveState({
-        isLive: active,
-        sessionKey: session.session_key,
-        sessionType: session.session_type,
-        sessionName: session.session_name,
-        circuitName: session.circuit_short_name,
-        isLoading: false
-      });
+    checkLiveSession();
+    // Re-check every 60 seconds
+    const statusInterval = setInterval(checkLiveSession, 60000);
+    return () => clearInterval(statusInterval);
+  }, [setSessionStatus]);
 
-      if (active) {
-          const drivers = await fetchDrivers(session.session_key);
-          setLiveState({ drivers });
-          pollLiveData(session.session_key);
-      } else {
-          // If not live, fetch everything once
-          await fetchAllData(session.session_key);
-      }
-    } catch (e) {
-      console.error(e);
-      setLiveState({ isLoading: false });
-    }
-  };
-
-  const fetchAllData = async (key) => {
-    try {
-      const [
-          drivers,
-          positions,
-          intervals,
-          laps,
-          stints,
-          weather,
-          raceControl,
-          radioClips
-      ] = await Promise.all([
-          fetchDrivers(key),
-          fetchPositions(key),
-          fetchIntervals(key),
-          fetchLaps(key, ''), // fetch all
-          fetchStints(key),
-          fetchWeather(key),
-          fetchRaceControl(key),
-          fetchTeamRadio(key)
-      ]);
-
-      setLiveState({
-        drivers,
-        positions: processPositions(positions),
-        intervals,
-        laps,
-        stints,
-        weather: weather && weather.length > 0 ? weather[weather.length - 1] : null,
-        raceControl,
-        radioClips
-      });
-    } catch (e) {
-        console.error("Failed to fetch all data:", e);
-    }
-  };
-
-  const processPositions = (positions) => {
-      const posMap = {};
-      if (Array.isArray(positions)) {
-          // Since the API returns historical stream, we really just want the latest position per driver if not doing playback.
-          // But to be safe, we'll store the latest for each driver.
-          positions.forEach(p => {
-              posMap[p.driver_number] = p; // overwrite to keep latest
-          });
-      }
-      return posMap;
-  };
-
-  const pollLiveData = async (keyToUse) => {
-    const key = keyToUse || sessionKey;
-    if (!key) return;
-    try {
-        const [
-            positions,
-            intervals,
-            laps,
-            stints,
-            weather,
-            raceControl,
-            radioClips
-        ] = await Promise.all([
-            fetchPositions(key),
-            fetchIntervals(key),
-            fetchLaps(key, ''),
-            fetchStints(key),
-            fetchWeather(key),
-            fetchRaceControl(key),
-            fetchTeamRadio(key)
-        ]);
-
-        setLiveState({
-            positions: processPositions(positions),
-            intervals,
-            laps,
-            stints,
-            weather: weather && weather.length > 0 ? weather[weather.length - 1] : null,
-            raceControl,
-            radioClips
-        });
-    } catch (e) {
-        console.error("Failed to poll live data:", e);
-    }
-  };
-
+  // 2. If live, start polling high-frequency endpoints every 3 seconds
   useEffect(() => {
-    checkLiveStatus();
-  }, []);
-
-  useEffect(() => {
-    if (isLive && sessionKey) {
-      pollingIntervalRef.current = setInterval(() => pollLiveData(sessionKey), 3000);
-    } else if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
+    if (!isLive) {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      return;
     }
+
+    const pollData = async () => {
+      try {
+        // Fetch latest positions
+        const posRes = await fetch(`${OPENF1_BASE_URL}/location?session_key=latest`);
+        const posData = await posRes.json();
+        if (posData && posData.length > 0) {
+            // Group by driver to store the latest position per driver
+            const latestPos = {};
+            posData.forEach(p => {
+                const existing = latestPos[p.driver_number];
+                if (!existing || new Date(p.date) > new Date(existing.date)) {
+                    latestPos[p.driver_number] = p;
+                }
+            });
+            updatePositions(latestPos);
+        }
+
+        // Fetch latest weather
+        const weatherRes = await fetch(`${OPENF1_BASE_URL}/weather?session_key=latest`);
+        const weatherData = await weatherRes.json();
+        if (weatherData && weatherData.length > 0) {
+            setWeather(weatherData[weatherData.length - 1]);
+        }
+
+        // Note: Race Control and Team Radio ideally require keeping track of the last seen date
+        // to avoid fetching entirely array every 3s, but OpenF1 returns the full array.
+        // The store handles deduplication.
+        
+      } catch (error) {
+        console.error("Live polling error:", error);
+      }
+    };
+
+    // Initial poll
+    pollData();
+    
+    // Poll every 3s
+    pollIntervalRef.current = setInterval(pollData, 3000);
 
     return () => {
-      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
-  }, [isLive, sessionKey]);
-
-  return state;
-};
+  }, [isLive, updatePositions, setWeather]);
+  
+  return { isLive };
+}

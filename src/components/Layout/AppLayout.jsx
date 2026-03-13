@@ -23,7 +23,7 @@ export default function AppLayout() {
           <span className={`hamburger-line ${sidebarOpen ? 'open' : ''}`} />
           <span className={`hamburger-line ${sidebarOpen ? 'open' : ''}`} />
         </button>
-        <span className="mobile-brand">PitWall</span>
+        <span className="mobile-brand">PaddockPulse</span>
       </header>
 
       {/* Sidebar with mobile toggle */}

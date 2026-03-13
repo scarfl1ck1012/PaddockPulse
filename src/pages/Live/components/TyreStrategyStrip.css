@@ -1,0 +1,86 @@
+.tyre-strategy-strip {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-3) var(--space-4);
+  overflow: hidden;
+}
+
+.tyre-strategy-strip.empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.strip-header h4 {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+}
+
+.stints-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.stint-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 20px;
+}
+
+.stint-driver {
+  width: 40px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: white;
+}
+
+.stint-track {
+  flex: 1;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+.stint-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.6rem;
+  border-right: 1px solid rgba(0, 0, 0, 0.5); /* Pit stop indicator line */
+}
+
+/* Add an active pulsing bar effect for the current live stint */
+.stint-bar.live {
+  position: relative;
+  overflow: hidden;
+}
+
+.stint-bar.live::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  background: white;
+  animation: pulseEdge 1s infinite alternate;
+}
+
+@keyframes pulseEdge {
+  from { opacity: 0.2; }
+  to { opacity: 1; box-shadow: 0 0 8px white; }
+}
