@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchSeasonRaces } from '../../api/jolpica';
-import { fetchSessionsByCircuit } from '../../api/openf1';
+import { fetchSessionsByCircuit, fetchSessionsByYear } from '../../api/openf1';
 import './SessionSelector.css';
 
 const SessionSelector = ({ onSelectSession }) => {
@@ -48,13 +48,12 @@ const SessionSelector = ({ onSelectSession }) => {
   useEffect(() => {
     const loadOpenF1 = async () => {
         try {
-            const res = await fetch(`https://api.openf1.org/v1/sessions?year=${year}`);
-            const data = await res.json();
-            setAllOpenF1Sessions(data || []);
+            const data = await fetchSessionsByYear(year);
+            setAllOpenF1Sessions(data);
             
             // Extract unique meetings (Races)
             const meetingMap = {};
-            (data || []).forEach(s => {
+            data.forEach(s => {
                 meetingMap[s.meeting_key] = s;
             });
             const uniqueMeetings = Object.values(meetingMap).sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
@@ -83,26 +82,33 @@ const SessionSelector = ({ onSelectSession }) => {
   };
 
   return (
-    <div className="session-selector">
-      <select value={year} onChange={e => setYear(e.target.value)}>
-        {years.map(y => <option key={y} value={y}>{y}</option>)}
-      </select>
+    <div className="session-selector-wrapper">
+      {allOpenF1Sessions.length === 0 && year < 2026 && (
+        <div style={{ color: '#ff4d4d', fontSize: '12px', textAlign: 'center', marginBottom: '10px' }}>
+          OpenF1 API is currently offline. Historical telemetry cannot be loaded for {year}.
+        </div>
+      )}
+      <div className="session-selector">
+        <select value={year} onChange={e => setYear(e.target.value)}>
+          {years.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
 
-      <select value={selectedRace} onChange={e => setSelectedRace(e.target.value)} disabled={races.length === 0}>
-        <option value="">-- Select Grand Prix --</option>
-        {races.map(r => (
-           <option key={r.meeting_key} value={r.meeting_key}>{r.meeting_name} ({r.location})</option>
-        ))}
-      </select>
+        <select value={selectedRace} onChange={e => setSelectedRace(e.target.value)} disabled={races.length === 0}>
+          <option value="">-- Select Grand Prix --</option>
+          {races.map(r => (
+            <option key={r.meeting_key} value={r.meeting_key}>{r.meeting_name} ({r.location})</option>
+          ))}
+        </select>
 
-      <select value={selectedSessionKey} onChange={e => setSelectedSessionKey(e.target.value)} disabled={sessions.length === 0}>
-        <option value="">-- Select Session --</option>
-        {sessions.map(s => (
-           <option key={s.session_key} value={s.session_key}>{s.session_name}</option>
-        ))}
-      </select>
+        <select value={selectedSessionKey} onChange={e => setSelectedSessionKey(e.target.value)} disabled={sessions.length === 0}>
+          <option value="">-- Select Session --</option>
+          {sessions.map(s => (
+            <option key={s.session_key} value={s.session_key}>{s.session_name}</option>
+          ))}
+        </select>
 
-      <button onClick={handleApply} disabled={!selectedSessionKey}>Load Data</button>
+        <button onClick={handleApply} disabled={!selectedSessionKey}>Load Data</button>
+      </div>
     </div>
   );
 };

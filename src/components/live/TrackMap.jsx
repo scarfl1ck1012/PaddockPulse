@@ -3,8 +3,10 @@ import { useLiveStore } from '../../store/liveStore';
 import { getTeamColour } from '../../utils/teamColours';
 
 
-const TrackMap = () => {
-  const { positions, drivers } = useLiveStore();
+const TrackMap = ({ customPositions, customDrivers }) => {
+  const storeState = useLiveStore();
+  const positions = customPositions || storeState.positions || {};
+  const drivers = customDrivers || storeState.drivers || [];
   const canvasRef = useRef(null);
   const [hoveredDriver, setHoveredDriver] = useState(null);
 

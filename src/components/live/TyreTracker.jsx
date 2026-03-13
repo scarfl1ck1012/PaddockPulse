@@ -3,8 +3,10 @@ import { useLiveStore } from '../../store/liveStore';
 import { TYRE_PALETTE } from '../../utils/tyrePalette';
 
 
-const TyreTracker = () => {
-  const { drivers, stints } = useLiveStore();
+const TyreTracker = ({ customDrivers, customStints }) => {
+  const storeState = useLiveStore();
+  const drivers = customDrivers || storeState.drivers || [];
+  const stints = customStints || storeState.stints || [];
 
   // Group stints by driver
   const stintsByDriver = {};

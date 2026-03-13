@@ -56,7 +56,13 @@ const DriverStandings = ({ year }) => {
           </tr>
         </thead>
         <tbody>
-          {standings.map(driver => {
+          {standings.length === 0 ? (
+            <tr>
+              <td colSpan="6" style={{textAlign: "center", padding: "40px", color: "var(--text-secondary)"}}>
+                No driver standings available for {year} yet.
+              </td>
+            </tr>
+          ) : standings.map(driver => {
             const isExpanded = expandedDriver === driver.Driver.driverId;
             const resData = driverResults[driver.Driver.driverId] || [];
             const constructor = driver.Constructors[0];

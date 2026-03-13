@@ -4,7 +4,12 @@ const fetchOpenF1 = async (endpoint) => {
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`);
     if (!response.ok) throw new Error(`OpenF1 Error: ${response.status}`);
-    return await response.json();
+    const data = await response.json();
+    if (data && data.detail) {
+      console.warn("OpenF1 Offline/Error:", data.detail);
+      return [];
+    }
+    return data;
   } catch (error) {
     console.error(error);
     return [];

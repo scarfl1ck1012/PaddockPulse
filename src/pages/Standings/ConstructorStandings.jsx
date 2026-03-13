@@ -81,7 +81,13 @@ const ConstructorStandings = ({ year }) => {
           </tr>
         </thead>
         <tbody>
-          {standings.map(team => {
+          {standings.length === 0 ? (
+            <tr>
+              <td colSpan="5" style={{textAlign: "center", padding: "40px", color: "var(--text-secondary)"}}>
+                No constructor standings available for {year} yet.
+              </td>
+            </tr>
+          ) : standings.map(team => {
             const constructorId = team.Constructor.constructorId;
             const isExpanded = expandedTeam === constructorId;
             const resData = teamResults[constructorId] || [];
