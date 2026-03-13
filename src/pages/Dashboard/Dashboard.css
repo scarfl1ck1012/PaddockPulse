@@ -1,458 +1,219 @@
-/* ============================================================
-   Dashboard Page Styles
-   ============================================================ */
-
-/* Hero Row */
-.dash-hero-row {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: var(--space-6);
-  margin-bottom: var(--space-6);
-}
-
-/* Card Base */
-.dash-card {
-  padding: var(--space-6);
-}
-
-.dash-card-header {
+.home-page {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-5);
+  flex-direction: column;
+  gap: 40px;
+  min-height: 100vh;
 }
 
-.dash-card-label {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-}
-
-.dash-card-link {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--f1-red);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
-.dash-card-link:hover {
-  color: #ff4444;
-}
-
-.dash-card-empty {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+.hero-section {
+  background: linear-gradient(135deg, rgba(20,20,25,1) 0%, rgba(40,10,10,1) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 80px 20px;
   text-align: center;
-  padding: var(--space-8);
-}
-
-/* Grid */
-.dash-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-6);
-}
-
-/* Feature Quick Links */
-.dash-features {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--space-3);
-  margin-bottom: var(--space-6);
-}
-
-.feature-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4) var(--space-3);
-  text-decoration: none;
-  border-top: 3px solid var(--feature-color, var(--border-subtle));
-  transition: all var(--transition-base);
-  cursor: pointer;
-  gap: var(--space-1);
-  text-align: center;
-}
-
-.feature-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  border-top-color: var(--feature-color);
-}
-
-.feature-icon {
-  font-size: 1.6rem;
-  margin-bottom: var(--space-1);
-}
-
-.feature-label {
-  font-family: var(--font-heading);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.03em;
-}
-
-.feature-desc {
-  font-size: 0.55rem;
-  color: var(--text-muted);
-  line-height: 1.3;
-}
-
-/* Info Row */
-.dash-info-row {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: var(--space-6);
-  margin-bottom: var(--space-6);
-}
-
-/* Dashboard Weather */
-.dash-weather-row {
-  display: flex;
-  gap: var(--space-5);
-  margin-bottom: var(--space-4);
-}
-
-.dash-weather-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dash-weather-val {
-  font-family: var(--font-heading);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.dash-weather-lbl {
-  font-size: 0.55rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-/* Race Control Preview */
-.dash-rc-preview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  border-top: 1px solid var(--border-subtle);
-  padding-top: var(--space-3);
-}
-
-.dash-rc-msg {
-  display: flex;
-  gap: var(--space-2);
-  font-size: var(--text-xs);
-  padding: var(--space-1) 0;
-}
-
-.dash-rc-time {
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  min-width: 40px;
-}
-
-.dash-rc-text {
-  color: var(--text-secondary);
-  flex: 1;
-}
-
-/* --- Next Race Card --- */
-.dash-next-race {
   position: relative;
   overflow: hidden;
 }
 
-.dash-next-race::before {
+.hero-section::after {
   content: '';
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(225, 6, 0, 0.1), transparent 70%);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(circle at 50% 0%, rgba(225,6,0,0.1) 0%, transparent 60%);
   pointer-events: none;
 }
 
-.next-race-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: var(--space-4);
+.hero-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 5rem;
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
-.next-race-info {
-  display: flex;
-  gap: var(--space-4);
-  align-items: flex-start;
+.hero-subtitle {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.next-race-flag {
+.live-badge {
+  display: inline-block;
+  background-color: var(--accent-red);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.btn-primary.large {
+  padding: 16px 40px;
+  font-size: 1.2rem;
+  background-color: var(--accent-red);
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: inline-block;
+}
+
+.btn-primary.large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(225,6,0,0.4);
+}
+
+.countdown-widget {
+  background-color: rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  padding: 30px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.countdown-widget h3 {
+  margin: 0 0 20px 0;
+  color: var(--text-secondary);
+}
+
+.countdown-clocks {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.c-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--bg-elevated);
+  padding: 16px;
+  border-radius: 8px;
+  min-width: 80px;
+}
+
+.c-block span {
   font-size: 2.5rem;
-  line-height: 1;
+  font-family: 'Roboto Mono', monospace;
+  font-weight: bold;
 }
 
-.next-race-name {
-  font-size: var(--text-xl);
-  font-weight: 800;
-  margin-bottom: var(--space-1);
-  color: var(--text-primary);
-}
-
-.next-race-circuit {
-  font-size: var(--text-sm);
+.c-block label {
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-bottom: var(--space-1);
+  margin-top: 4px;
 }
 
-.next-race-date {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
+.btn-secondary {
+  background-color: transparent;
+  color: white;
+  border: 1px solid white;
+  padding: 10px 24px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.2s;
 }
 
-/* --- Championship Leader --- */
-.dash-leader {
-  position: relative;
-  overflow: hidden;
+.btn-secondary:hover {
+  background-color: white;
+  color: black;
 }
 
-.leader-content {
+.stats-strip {
   display: flex;
-  align-items: center;
-  gap: var(--space-5);
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.leader-color-accent {
-  width: 4px;
-  height: 60px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.leader-info {
+.strip-item {
   flex: 1;
-}
-
-.leader-name {
-  font-size: var(--text-lg);
-  font-weight: 400;
-  margin-bottom: var(--space-1);
-}
-
-.leader-name strong {
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.leader-team {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-}
-
-.leader-stats {
-  display: flex;
-  gap: var(--space-5);
-}
-
-.leader-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.leader-stat-value {
-  font-family: var(--font-heading);
-  font-size: var(--text-2xl);
-  font-weight: 800;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.leader-stat-label {
-  font-size: 0.55rem;
-  color: var(--text-muted);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  margin-top: 2px;
-}
-
-/* --- Last Race Winner --- */
-.winner-content {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-4);
-}
-
-.winner-info {
-  flex: 1;
-}
-
-.winner-race-name {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: var(--space-2);
-}
-
-.winner-name {
-  font-size: var(--text-lg);
-  font-weight: 700;
-  margin-bottom: var(--space-1);
-}
-
-.winner-team {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin-bottom: var(--space-2);
-}
-
-.winner-time {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
-
-/* --- Mini Standings --- */
-.mini-standings {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.mini-standings-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) 0;
-  font-size: var(--text-sm);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.mini-standings-row:last-child {
-  border-bottom: none;
-}
-
-.mini-pos {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: var(--text-md);
-  width: 24px;
+  padding: 24px;
   text-align: center;
-  color: var(--text-muted);
-}
-
-.mini-driver {
-  flex: 1;
-  color: var(--text-primary);
-}
-
-.mini-driver strong {
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-.mini-team {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  display: none;
-}
-
-.mini-points {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  min-width: 36px;
-  text-align: right;
-}
-
-/* --- Recent Races --- */
-.dash-recent-races {
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 8px;
 }
 
-.dash-race-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) 0;
-  font-size: var(--text-sm);
-  border-bottom: 1px solid var(--border-subtle);
+.strip-item:last-child {
+  border-right: none;
 }
 
-.dash-race-row:last-child {
-  border-bottom: none;
+.strip-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: bold;
 }
 
-.dash-race-round {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  min-width: 28px;
+.strip-value {
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
-.dash-race-flag {
-  font-size: 1rem;
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  width: 100%;
 }
 
-.dash-race-name {
-  flex: 1;
+.feature-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  text-decoration: none;
   color: var(--text-primary);
-  font-weight: 500;
+  transition: transform 0.3s, border-color 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.dash-race-date {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  font-weight: 500;
+.feature-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-red);
 }
 
-.race-past .dash-race-name {
-  color: var(--text-muted);
+.f-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
 }
 
-.dash-race-done {
-  color: var(--success);
-  font-size: var(--text-xs);
-  font-weight: 700;
+.feature-card h3 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 
-/* Responsive */
-@media (max-width: 1100px) {
-  .dash-hero-row {
-    grid-template-columns: 1fr;
-  }
-  .dash-grid {
-    grid-template-columns: 1fr;
-  }
-  .dash-info-row {
-    grid-template-columns: 1fr;
-  }
-  .dash-features {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.feature-card p {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
 }
 
 @media (max-width: 768px) {
-  .next-race-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .dash-features {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .hero-title { font-size: 3rem; }
+  .stats-strip { flex-direction: column; }
+  .strip-item { border-right: none; border-bottom: 1px solid var(--border); }
+  .strip-item:last-child { border-bottom: none; }
 }

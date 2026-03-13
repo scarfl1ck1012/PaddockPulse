@@ -1,112 +1,166 @@
-import { useState } from 'react';
-import { useDriverStandings, useOpenF1Drivers } from '../../hooks/useF1Data';
-import { LoadingSkeleton, ErrorState, SeasonSelector } from '../../components/Common/Common';
-import { getTeamColour, CURRENT_SEASON } from '../../api/constants';
-import './DriverStandings.css';
+import React, { useEffect, useState } from 'react';
+import { fetchDriverStandings, fetchDriverSeasonResults } from '../../api/jolpica';
+import { getTeamColour } from '../../utils/teamColours';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Link } from 'react-router-dom';
 
-export default function DriverStandings() {
-  const [season, setSeason] = useState(String(CURRENT_SEASON));
-  const { data: standings, isLoading, error, refetch } = useDriverStandings(season);
-  const { data: openf1Drivers } = useOpenF1Drivers();
+const DriverStandings = ({ year }) => {
+  const [standings, setStandings] = useState([]);
+  const [expandedDriver, setExpandedDriver] = useState(null);
+  const [driverResults, setDriverResults] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Build headshot map from OpenF1
-  const headshotMap = {};
-  if (openf1Drivers) {
-    openf1Drivers.forEach(d => {
-      if (d.name_acronym) headshotMap[d.name_acronym] = d.headshot_url;
-    });
-  }
+  useEffect(() => {
+    const loadStandings = async () => {
+      setIsLoading(true);
+      const data = await fetchDriverStandings(year);
+      if (data?.MRData?.StandingsTable?.StandingsLists?.[0]) {
+        setStandings(data.MRData.StandingsTable.StandingsLists[0].DriverStandings);
+      } else {
+        setStandings([]);
+      }
+      setIsLoading(false);
+      setExpandedDriver(null);
+    };
+    loadStandings();
+  }, [year]);
 
-  if (error) {
-    return <ErrorState message={error.message} onRetry={refetch} />;
-  }
+  const handleExpand = async (driverId) => {
+    if (expandedDriver === driverId) {
+      setExpandedDriver(null);
+      return;
+    }
+    setExpandedDriver(driverId);
+    
+    if (!driverResults[driverId]) {
+      const res = await fetchDriverSeasonResults(year, driverId);
+      if (res?.MRData?.RaceTable?.Races) {
+        setDriverResults(prev => ({ ...prev, [driverId]: res.MRData.RaceTable.Races }));
+      }
+    }
+  };
+
+  if (isLoading) return <div>Loading Driver Standings...</div>;
 
   return (
-    <div className="page-container" id="driver-standings-page">
-      <div className="page-header">
-        <div className="standings-header-row">
-          <div>
-            <h1 className="page-title">Driver Standings</h1>
-            <p className="page-subtitle">Championship points and positions</p>
-          </div>
-          <SeasonSelector value={season} onChange={setSeason} />
-        </div>
-      </div>
+    <div className="standings-table-container">
+      <table className="standings-table">
+        <thead>
+          <tr>
+            <th>POS</th>
+            <th>DRIVER</th>
+            <th>NATIONALITY</th>
+            <th>TEAM</th>
+            <th>POINTS</th>
+            <th>WINS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {standings.map(driver => {
+            const isExpanded = expandedDriver === driver.Driver.driverId;
+            const resData = driverResults[driver.Driver.driverId] || [];
+            const constructor = driver.Constructors[0];
+            const teamCol = getTeamColour(constructor?.name);
 
-      {isLoading ? (
-        <LoadingSkeleton rows={10} />
-      ) : standings?.length === 0 ? (
-        <ErrorState message={`No driver standings found for ${season}`} />
-      ) : (
-        <div className="standings-table-wrapper">
-          <table className="standings-table" id="driver-standings-table">
-            <thead>
-              <tr>
-                <th className="col-pos">POS</th>
-                <th className="col-driver">Driver</th>
-                <th className="col-team">Team</th>
-                <th className="col-wins">Wins</th>
-                <th className="col-points">Points</th>
-                <th className="col-bar"></th>
-              </tr>
-            </thead>
-            <tbody className="stagger-children">
-              {standings?.map((d, idx) => {
-                const maxPoints = standings[0]?.points || 1;
-                const pctWidth = (d.points / maxPoints) * 100;
-                const teamColor = getTeamColour(d.Constructors?.[0]?.constructorId);
-                const driverCode = d.Driver?.code;
-                const headshot = headshotMap[driverCode];
+            // Prepare chart data
+            const chartData = resData.map(r => ({
+              round: r.round,
+              raceName: r.raceName,
+              points: parseFloat(r.Results[0].points)
+            }));
 
-                return (
-                  <tr key={d.Driver?.driverId || idx} className="standings-row">
-                    <td className="col-pos">
-                      <span className={`pos-number ${idx < 3 ? 'pos-podium' : ''}`}>
-                        {d.position}
-                      </span>
-                    </td>
-                    <td className="col-driver">
-                      <div className="driver-cell">
-                        <div className="team-color-bar" style={{ background: teamColor, height: 36 }} />
-                        {headshot && Number(season) >= 2023 && (
-                          <img
-                            src={headshot}
-                            alt={d.Driver?.familyName}
-                            className="driver-headshot"
-                            loading="lazy"
-                          />
-                        )}
-                        <div className="driver-name-group">
-                          <span className="driver-first">{d.Driver?.givenName}</span>
-                          <span className="driver-last">{d.Driver?.familyName}</span>
+            return (
+              <React.Fragment key={driver.Driver.driverId}>
+                <tr 
+                  className="standings-row" 
+                  style={{ borderLeft: `4px solid ${teamCol}` }}
+                  onClick={() => handleExpand(driver.Driver.driverId)}
+                >
+                  <td>{driver.position}</td>
+                  <td>{driver.Driver.givenName} {driver.Driver.familyName}</td>
+                  <td>{driver.Driver.nationality}</td>
+                  <td>{constructor?.name || '-'}</td>
+                  <td>{driver.points}</td>
+                  <td>{driver.wins}</td>
+                </tr>
+                
+                {isExpanded && (
+                  <tr className="driver-detail-row">
+                    <td colSpan="6">
+                      <div className="detail-pnl animate-slide-in">
+                        
+                        <div className="detail-table-outer">
+                          <h4>{year} RACE RESULTS</h4>
+                          {resData.length > 0 ? (
+                            <table className="detail-results-table">
+                              <thead>
+                                <tr>
+                                  <th>RND</th>
+                                  <th>GRAND PRIX</th>
+                                  <th>GRID</th>
+                                  <th>FINISH</th>
+                                  <th>PTS</th>
+                                  <th>STATUS</th>
+                                  <th></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {resData.map(r => {
+                                  const result = r.Results[0];
+                                  return (
+                                    <tr key={r.round}>
+                                      <td>{r.round}</td>
+                                      <td>{r.raceName}</td>
+                                      <td>{result.grid}</td>
+                                      <td>{result.positionText}</td>
+                                      <td>{result.points}</td>
+                                      <td>{result.status}</td>
+                                      <td>
+                                        <Link to={`/recap?year=${year}&round=${r.round}`} className="btn-watch">Replay</Link>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div>Loading results...</div>
+                          )}
                         </div>
-                        {driverCode && (
-                          <span className="driver-code">{driverCode}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="col-team">
-                      <span className="team-name">{d.Constructors?.[0]?.name}</span>
-                    </td>
-                    <td className="col-wins">{d.wins}</td>
-                    <td className="col-points">
-                      <span className="points-value">{d.points}</span>
-                    </td>
-                    <td className="col-bar">
-                      <div className="points-bar-track">
-                        <div
-                          className="points-bar-fill"
-                          style={{ width: `${pctWidth}%`, background: teamColor }}
-                        />
+
+                        <div className="detail-chart-outer">
+                          <h4>POINTS PER RACE</h4>
+                          {chartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={250}>
+                              <BarChart data={chartData}>
+                                <XAxis dataKey="round" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                                <Tooltip
+                                  contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }}
+                                  cursor={{fill: 'rgba(255, 255, 255, 0.1)'}}
+                                  formatter={(value, name, props) => [value + ' pts', props.payload.raceName]}
+                                />
+                                <Bar dataKey="points" fill={teamCol} radius={[4, 4, 0, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              Loading chart...
+                            </div>
+                          )}
+                        </div>
+
                       </div>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
-}
+};
+
+export default DriverStandings;

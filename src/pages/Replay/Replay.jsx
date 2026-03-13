@@ -1,210 +1,210 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useOpenF1Drivers, useOpenF1Laps, useOpenF1Stints } from '../../hooks/useF1Data';
-import { LoadingSkeleton } from '../../components/Common/Common';
-import { TYRE_COMPOUNDS, getTeamColour } from '../../api/constants';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { fetchSeasonRaces } from '../../api/jolpica';
+import ReplayControls from '../../components/recap/ReplayControls';
+import ReplayTrackMap from '../../components/recap/ReplayTrackMap';
+import { getTeamColour } from '../../utils/teamColours';
 import './Replay.css';
 
-export default function Replay() {
-  const [currentLap, setCurrentLap] = useState(1);
-  const [isPlaying, setIsPlaying] = useState(false);
+const Replay = () => {
+    const [searchParams] = useSearchParams();
+    const initialYear = searchParams.get('year') || new Date().getFullYear();
+    const initialRound = searchParams.get('round') || '';
 
-  const { data: drivers, isLoading: loadingDrivers } = useOpenF1Drivers();
-  const { data: allLaps, isLoading: loadingLaps } = useOpenF1Laps();
-  const { data: allStints } = useOpenF1Stints();
+    const [year, setYear] = useState(initialYear);
+    const [round, setRound] = useState(initialRound);
+    
+    const [races, setRaces] = useState([]);
+    const [raceData, setRaceData] = useState(null); // Full classification
+    const [lapsData, setLapsData] = useState([]); // Array of laps containing timings
+    
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [speed, setSpeed] = useState(1);
+    const [currentLap, setCurrentLap] = useState(1);
+    
+    const animationRef = useRef();
+    const lastTimeRef = useRef();
 
-  // Driver map
-  const driverMap = useMemo(() => {
-    const map = {};
-    if (drivers) {
-      const seen = new Set();
-      drivers.forEach(d => {
-        if (!seen.has(d.driver_number)) {
-          map[d.driver_number] = d;
-          seen.add(d.driver_number);
+    const years = Array.from({ length: new Date().getFullYear() - 1949 }, (_, i) => new Date().getFullYear() - i);
+
+    useEffect(() => {
+        const loadRaces = async () => {
+            const data = await fetchSeasonRaces(year);
+            if (data?.MRData?.RaceTable?.Races) {
+                setRaces(data.MRData.RaceTable.Races);
+            }
+        };
+        loadRaces();
+    }, [year]);
+
+    const handleLoadReplay = async () => {
+        if (!round) return;
+        setIsPlaying(false);
+        setCurrentLap(1);
+        
+        try {
+            // Fetch results summary
+            const res = await fetch(`https://api.jolpi.ca/ergast/f1/${year}/${round}/results.json`);
+            const resData = await res.json();
+            
+            // Fetch lap by lap data
+            // Note: Jolpica might return laps paginated (limit 30 by default). We need limit=2000 for a full race typically.
+            const lapsRes = await fetch(`https://api.jolpi.ca/ergast/f1/${year}/${round}/laps.json?limit=2000`);
+            const lData = await lapsRes.json();
+
+            if (resData?.MRData?.RaceTable?.Races[0]) {
+                setRaceData(resData.MRData.RaceTable.Races[0]);
+            }
+            if (lData?.MRData?.RaceTable?.Races[0]?.Laps) {
+                setLapsData(lData.MRData.RaceTable.Races[0].Laps);
+            }
+        } catch(e) { console.error(e) }
+    };
+
+    // Auto-load if params existed
+    useEffect(() => {
+        if (initialRound) {
+            handleLoadReplay();
         }
-      });
-    }
-    return map;
-  }, [drivers]);
+    }, []);
 
-  // Max laps
-  const maxLap = useMemo(() => {
-    if (!allLaps?.length) return 0;
-    return Math.max(...allLaps.map(l => l.lap_number).filter(n => !isNaN(n)));
-  }, [allLaps]);
+    // Animation Loop
+    useEffect(() => {
+        const update = (time) => {
+            if (lastTimeRef.current != null) {
+                const delta = time - lastTimeRef.current;
+                
+                // Roughly 1 lap = 90s in real time.
+                // Replay speed 1x: 1 lap takes 90s -> 0.011 laps per second
+                // For a more engaging UI, let's make 1x = 10s per lap.
+                // This means progress += delta * (speed / 10000)
+                
+                const increment = (delta / 10000) * speed;
+                setCurrentLap(prev => {
+                    const next = prev + increment;
+                    if (next >= lapsData.length) {
+                        setIsPlaying(false);
+                        return lapsData.length;
+                    }
+                    return next;
+                });
+            }
+            lastTimeRef.current = time;
+            if (isPlaying) {
+                animationRef.current = requestAnimationFrame(update);
+            }
+        };
 
-  // Build stint compound map
-  const stintMap = useMemo(() => {
-    if (!allStints?.length) return {};
-    const map = {};
-    allStints.forEach(s => {
-      for (let lap = s.lap_start; lap <= (s.lap_end || s.lap_start + 50); lap++) {
-        map[`${s.driver_number}_${lap}`] = s.compound;
-      }
-    });
-    return map;
-  }, [allStints]);
-
-  // Get position snapshot for current lap
-  const lapSnapshot = useMemo(() => {
-    if (!allLaps?.length) return [];
-
-    // Get all laps for the current lap number
-    const lapsAtCurrent = allLaps.filter(l => l.lap_number === currentLap);
-
-    // Build snapshot — sort by position or lap duration
-    const rows = lapsAtCurrent.map(l => {
-      const driver = driverMap[l.driver_number];
-      const compound = stintMap[`${l.driver_number}_${currentLap}`];
-      return {
-        driverNumber: l.driver_number,
-        driver,
-        position: l.position || 99,
-        lapTime: l.lap_duration,
-        sector1: l.duration_sector_1,
-        sector2: l.duration_sector_2,
-        sector3: l.duration_sector_3,
-        compound,
-        isPitOut: l.is_pit_out_lap,
-        stSpeed: l.st_speed,
-      };
-    });
-
-    return rows.sort((a, b) => a.position - b.position);
-  }, [allLaps, currentLap, driverMap, stintMap]);
-
-  // Leader's lap time for gap calculation
-  const leaderTime = lapSnapshot[0]?.lapTime;
-
-  // Find best sector times for purple highlighting
-  const bestSectors = useMemo(() => {
-    const s1 = Math.min(...lapSnapshot.filter(r => r.sector1).map(r => r.sector1));
-    const s2 = Math.min(...lapSnapshot.filter(r => r.sector2).map(r => r.sector2));
-    const s3 = Math.min(...lapSnapshot.filter(r => r.sector3).map(r => r.sector3));
-    return { s1, s2, s3 };
-  }, [lapSnapshot]);
-
-  // Playback
-  const handlePlay = useCallback(() => {
-    if (isPlaying) {
-      setIsPlaying(false);
-      return;
-    }
-    setIsPlaying(true);
-    const interval = setInterval(() => {
-      setCurrentLap(prev => {
-        if (prev >= maxLap) {
-          clearInterval(interval);
-          setIsPlaying(false);
-          return prev;
+        if (isPlaying) {
+            animationRef.current = requestAnimationFrame(update);
+        } else {
+            lastTimeRef.current = null;
+            cancelAnimationFrame(animationRef.current);
         }
-        return prev + 1;
-      });
-    }, 800);
-    // Store interval for cleanup
-    return () => clearInterval(interval);
-  }, [isPlaying, maxLap]);
 
-  const formatTime = (s) => {
-    if (!s) return '—';
-    const mins = Math.floor(s / 60);
-    const secs = (s % 60).toFixed(3);
-    return mins > 0 ? `${mins}:${secs.padStart(6, '0')}` : secs;
-  };
+        return () => cancelAnimationFrame(animationRef.current);
+    }, [isPlaying, speed, lapsData.length]);
 
-  return (
-    <div className="page-container" id="replay-page">
-      <div className="page-header">
-        <h1 className="page-title">🎬 Race Replay</h1>
-        <p className="page-subtitle">Step through the race lap by lap</p>
-      </div>
+    const handleSeek = (lap) => {
+        setCurrentLap(lap);
+    };
 
-      {loadingDrivers || loadingLaps ? (
-        <LoadingSkeleton rows={10} />
-      ) : maxLap === 0 ? (
-        <div className="replay-empty glass-card">
-          <div className="replay-empty-icon">🎬</div>
-          <h3>No Lap Data</h3>
-          <p>Lap data will be available during or after a session.</p>
-        </div>
-      ) : (
-        <>
-          {/* Playback Controls */}
-          <div className="replay-controls glass-card">
-            <button className="replay-btn" onClick={handlePlay}>
-              {isPlaying ? '⏸ Pause' : '▶ Play'}
-            </button>
-            <div className="replay-slider-wrap">
-              <input
-                type="range"
-                className="replay-slider"
-                min={1}
-                max={maxLap}
-                value={currentLap}
-                onChange={e => { setCurrentLap(Number(e.target.value)); setIsPlaying(false); }}
-              />
-              <div className="replay-progress" style={{ width: `${((currentLap - 1) / (maxLap - 1)) * 100}%` }} />
-            </div>
-            <div className="replay-lap-display">
-              <span className="replay-lap-current">Lap {currentLap}</span>
-              <span className="replay-lap-total">/ {maxLap}</span>
-            </div>
-            <div className="replay-step-btns">
-              <button className="step-btn" onClick={() => { setCurrentLap(Math.max(1, currentLap - 1)); setIsPlaying(false); }}>◀</button>
-              <button className="step-btn" onClick={() => { setCurrentLap(Math.min(maxLap, currentLap + 1)); setIsPlaying(false); }}>▶</button>
-            </div>
-          </div>
+    const getLapState = (lapNum) => {
+        // Find the lap data close to lapNum
+        const idx = Math.floor(lapNum) - 1;
+        if (idx < 0 || idx >= lapsData.length) return {};
+        const lap = lapsData[idx];
+        const state = {};
+        lap.Timings.forEach(t => {
+            state[t.driverId] = t;
+        });
+        return state;
+    };
 
-          {/* Position Board */}
-          <div className="replay-board">
-            {lapSnapshot.map((row, i) => {
-              const colour = row.driver?.team_colour ? `#${row.driver.team_colour}` : getTeamColour(row.driver?.team_name);
-              const compound = TYRE_COMPOUNDS[row.compound];
-              const gap = row.lapTime && leaderTime && i > 0
-                ? `+${(row.lapTime - leaderTime).toFixed(3)}`
-                : '';
-
-              return (
-                <div
-                  key={row.driverNumber}
-                  className={`replay-row glass-card ${i < 3 ? 'replay-podium' : ''} ${row.isPitOut ? 'replay-pit' : ''}`}
-                  style={{ '--team-color': colour, animationDelay: `${i * 30}ms` }}
-                >
-                  <span className="replay-pos">{row.position !== 99 ? row.position : '—'}</span>
-                  <div className="replay-team-bar" style={{ background: colour }} />
-                  <div className="replay-driver-info">
-                    <span className="replay-driver-name">{row.driver?.full_name || `#${row.driverNumber}`}</span>
-                    <span className="replay-driver-code">{row.driver?.name_acronym}</span>
-                  </div>
-                  <div className="replay-sectors">
-                    <span className={`sector-val ${row.sector1 === bestSectors.s1 ? 'sector-best' : ''}`}>
-                      {row.sector1 ? row.sector1.toFixed(3) : '—'}
-                    </span>
-                    <span className={`sector-val ${row.sector2 === bestSectors.s2 ? 'sector-best' : ''}`}>
-                      {row.sector2 ? row.sector2.toFixed(3) : '—'}
-                    </span>
-                    <span className={`sector-val ${row.sector3 === bestSectors.s3 ? 'sector-best' : ''}`}>
-                      {row.sector3 ? row.sector3.toFixed(3) : '—'}
-                    </span>
-                  </div>
-                  <span className="replay-time">{formatTime(row.lapTime)}</span>
-                  <span className="replay-gap">{gap}</span>
-                  {compound && (
-                    <span className="replay-tyre" style={{
-                      background: compound.color,
-                      color: row.compound === 'HARD' ? '#111' : '#fff',
-                    }}>
-                      {compound.letter}
-                    </span>
-                  )}
-                  {row.isPitOut && <span className="replay-pit-badge">PIT</span>}
-                  {row.stSpeed ? <span className="replay-speed">{row.stSpeed}</span> : null}
+    const currentLapState = getLapState(currentLap);
+    
+    return (
+        <div className="replay-page">
+            <div className="replay-header">
+                <h1>RACE RECAP</h1>
+                <div className="replay-selector">
+                    <select value={year} onChange={e => setYear(e.target.value)}>
+                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                    <select value={round} onChange={e => setRound(e.target.value)}>
+                        <option value="">-- Select Grand Prix --</option>
+                        {races.map(r => (
+                            <option key={r.round} value={r.round}>{r.raceName}</option>
+                        ))}
+                    </select>
+                    <button onClick={handleLoadReplay} disabled={!round} className="load-btn">Load Replay</button>
                 </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+            </div>
+
+            {raceData && lapsData.length > 0 && (
+                <div className="replay-dashboard">
+                    <div className="replay-main">
+                        <div className="replay-info-panel">
+                            <h2>{raceData.raceName} {year}</h2>
+                            <div className="winner-stat">
+                                <strong>Winner:</strong> {raceData.Results[0].Driver.givenName} {raceData.Results[0].Driver.familyName}
+                            </div>
+                        </div>
+
+                        <ReplayTrackMap 
+                            lapData={currentLapState} 
+                            currentLap={currentLap} 
+                            drivers={raceData.Results.map(r => ({ driverId: r.Driver.driverId, code: r.Driver.code, constructorId: r.Constructor.constructorId}))} 
+                        />
+                        
+                        <ReplayControls 
+                            isPlaying={isPlaying}
+                            onTogglePlay={() => setIsPlaying(!isPlaying)}
+                            progress={currentLap}
+                            onSeek={handleSeek}
+                            speed={speed}
+                            onChangeSpeed={setSpeed}
+                            currentLap={currentLap}
+                            totalLaps={lapsData.length}
+                            onRestart={() => { setCurrentLap(1); setIsPlaying(true); }}
+                        />
+                    </div>
+
+                    <div className="replay-sidebar">
+                        <table className="replay-leaderboard">
+                            <thead>
+                                <tr>
+                                    <th>POS</th>
+                                    <th>DRIVER</th>
+                                    <th>GAP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {raceData.Results.map((r) => {
+                                    // Use live lap state for ordering if possible, but ordering by classification and showing current gap is fine.
+                                    const timing = currentLapState[r.Driver.driverId];
+                                    const drvPos = timing ? timing.position : r.position;
+                                    const teamCol = getTeamColour(r.Constructor.name);
+                                    
+                                    return (
+                                        <tr key={r.Driver.driverId} style={{ borderLeft: `3px solid ${teamCol}` }}>
+                                            <td>{drvPos}</td>
+                                            <td><b>{r.Driver.code || r.Driver.familyName}</b></td>
+                                            <td className="mono">{timing ? timing.time : '--:--'}</td>
+                                        </tr>
+                                    );
+                                }).sort((a,b) => {
+                                    const aPos = parseInt(a.props.children[0].props.children) || 99;
+                                    const bPos = parseInt(b.props.children[0].props.children) || 99;
+                                    return aPos - bPos;
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default Replay;

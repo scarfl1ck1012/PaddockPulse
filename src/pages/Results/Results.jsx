@@ -1,137 +1,230 @@
-import { useLastRaceResults } from '../../hooks/useF1Data';
-import { LoadingSkeleton } from '../../components/Common/Common';
-import { getTeamColour, getCountryFlag } from '../../api/constants';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { fetchSeasonRaces, fetchRaceResults, fetchQualifying } from '../../api/jolpica';
+import PodiumResult from '../../components/schedule/PodiumResult';
+import { getTeamColour } from '../../utils/teamColours';
 import './Results.css';
 
-export default function Results() {
-  const { data: raceData, isLoading } = useLastRaceResults();
-  const results = raceData?.Results || [];
-  const podium = results.slice(0, 3);
-  const fastestLap = results.find(r => r.FastestLap?.rank === '1');
+const Results = () => {
+    const [year, setYear] = useState(new Date().getFullYear());
+    const [races, setRaces] = useState([]);
+    const [selectedRound, setSelectedRound] = useState('');
+    const [sessionType, setSessionType] = useState('Race');
+    const [raceData, setRaceData] = useState(null);
+    const [qualiData, setQualiData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-  return (
-    <div className="page-container" id="results-page">
-      <div className="page-header">
-        <h1 className="page-title">🏁 Race Results</h1>
-        <p className="page-subtitle">
-          {raceData ? `${raceData.raceName} — ${raceData.Circuit?.circuitName}` : 'Latest race results'}
-        </p>
-      </div>
+    const years = Array.from({ length: new Date().getFullYear() - 1949 }, (_, i) => new Date().getFullYear() - i);
+    const sessionTypes = ['Race', 'Qualifying', 'Sprint', 'Practice'];
 
-      {isLoading ? (
-        <LoadingSkeleton rows={10} />
-      ) : results.length === 0 ? (
-        <div className="results-empty glass-card">
-          <div className="results-empty-icon">🏁</div>
-          <h3>No Results</h3>
-          <p>Race results will appear after the first race of the season.</p>
+    useEffect(() => {
+        const loadRaces = async () => {
+            const data = await fetchSeasonRaces(year);
+            if (data?.MRData?.RaceTable?.Races) {
+                // filter completed races
+                const completed = data.MRData.RaceTable.Races.filter(r => new Date(`${r.date}T${r.time}`) < new Date());
+                setRaces(completed);
+                if (completed.length > 0) {
+                    setSelectedRound(completed[completed.length - 1].round);
+                } else {
+                    setSelectedRound('');
+                    setRaceData(null);
+                    setQualiData(null);
+                }
+            }
+        };
+        loadRaces();
+    }, [year]);
+
+    useEffect(() => {
+        const loadResults = async () => {
+            if (!selectedRound) return;
+            setIsLoading(true);
+            try {
+                if (sessionType === 'Race') {
+                    const res = await fetchRaceResults(year, selectedRound);
+                    if (res?.MRData?.RaceTable?.Races[0]) {
+                        setRaceData(res.MRData.RaceTable.Races[0]);
+                    } else {
+                        setRaceData(null);
+                    }
+                } else if (sessionType === 'Qualifying') {
+                    const res = await fetchQualifying(year, selectedRound);
+                    if (res?.MRData?.RaceTable?.Races[0]) {
+                        setQualiData(res.MRData.RaceTable.Races[0]);
+                    } else {
+                        setQualiData(null);
+                    }
+                }
+            } catch(e) { console.error(e) }
+            setIsLoading(false);
+        };
+        loadResults();
+    }, [year, selectedRound, sessionType]);
+
+    const renderQualiResults = () => {
+        if (!qualiData || !qualiData.QualifyingResults) return <div>No Qualifying data available.</div>;
+        
+        return (
+            <div className="table-container">
+                <table className="results-table">
+                    <thead>
+                        <tr>
+                            <th>POS</th>
+                            <th>DRIVER</th>
+                            <th>TEAM</th>
+                            <th>Q1</th>
+                            <th>Q2</th>
+                            <th>Q3</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {qualiData.QualifyingResults.map(res => {
+                            const teamCol = getTeamColour(res.Constructor.name);
+                            // Eliminated if no Q2/Q3 time
+                            const isQ1Out = !res.Q2 && !res.Q3;
+                            const isQ2Out = res.Q2 && !res.Q3;
+
+                            return (
+                                <tr key={res.Driver.driverId} style={{ borderLeft: `4px solid ${teamCol}` }}>
+                                    <td>{res.position}</td>
+                                    <td><b>{res.Driver.givenName} {res.Driver.familyName}</b></td>
+                                    <td>{res.Constructor.name}</td>
+                                    <td className={`mono ${isQ1Out ? 'eliminated' : ''}`}>{res.Q1 || '-'}</td>
+                                    <td className={`mono ${isQ2Out ? 'eliminated' : ''}`}>{res.Q2 || '-'}</td>
+                                    <td className="mono">{res.Q3 || '-'}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
+    const renderRaceResults = () => {
+        if (!raceData || !raceData.Results) return <div>No Race data available.</div>;
+
+        const results = raceData.Results;
+        const fastestLapHolder = results.find(r => r.FastestLap?.rank === "1");
+
+        return (
+            <>
+                {results.length >= 3 && (
+                    <div className="podium-wrapper">
+                        <PodiumResult results={results} />
+                    </div>
+                )}
+
+                <div className="stats-panel">
+                    <div className="stat-box">
+                        <span className="st-lbl">WINNER TIME</span>
+                        <span className="st-val mono">{results[0].Time?.time || '-'}</span>
+                    </div>
+                    {fastestLapHolder && (
+                        <div className="stat-box">
+                            <span className="st-lbl">FASTEST LAP</span>
+                            <span className="st-val mono purple-text">{fastestLapHolder.FastestLap.Time.time} ({fastestLapHolder.Driver.familyName})</span>
+                        </div>
+                    )}
+                    <div className="stat-box">
+                        <span className="st-lbl">REPLAY</span>
+                        <Link to={`/recap?year=${year}&round=${selectedRound}`} className="watch-btn">▶ Watch</Link>
+                    </div>
+                </div>
+
+                <div className="table-container">
+                    <table className="results-table">
+                        <thead>
+                            <tr>
+                                <th>POS</th>
+                                <th>DRIVER</th>
+                                <th>CAR</th>
+                                <th>LAPS</th>
+                                <th>TIME / GAP</th>
+                                <th>PTS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {results.map(res => {
+                                const teamCol = getTeamColour(res.Constructor.name);
+                                const isFastest = res.FastestLap?.rank === "1";
+                                const isPole = res.grid === "1";
+                                const isDNF = !res.status.includes('Finished') && !res.status.includes('Lap');
+
+                                return (
+                                    <tr 
+                                        key={res.Driver.driverId} 
+                                        className={isFastest ? 'fastest-lap-row' : ''}
+                                        style={{ borderLeft: `4px solid ${teamCol}` }}
+                                    >
+                                        <td>{res.positionText === 'R' ? 'DNF' : res.positionText}</td>
+                                        <td>
+                                            <b>{res.Driver.givenName} {res.Driver.familyName}</b>
+                                            {isPole && <span className="pole-badge">POLE</span>}
+                                        </td>
+                                        <td>{res.Constructor.name}</td>
+                                        <td>{res.laps}</td>
+                                        <td className={`mono ${isDNF ? 'dnf-text' : ''}`}>
+                                            {isDNF ? res.status : (res.Time?.time || res.status)}
+                                        </td>
+                                        <td>{res.points}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </>
+        );
+    };
+
+    return (
+        <div className="results-page">
+            <div className="results-header">
+                <h1>RACE RESULTS</h1>
+                
+                <div className="selectors-row">
+                    <select value={year} onChange={e => setYear(e.target.value)}>
+                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+
+                    <select value={selectedRound} onChange={e => setSelectedRound(e.target.value)}>
+                        <option value="">-- Select Grand Prix --</option>
+                        {races.map(r => (
+                            <option key={r.round} value={r.round}>{r.raceName}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {selectedRound && (
+                    <div className="session-toggles">
+                        {sessionTypes.map(type => (
+                            <button 
+                                key={type}
+                                className={`session-toggle ${sessionType === type ? 'active' : ''}`}
+                                onClick={() => setSessionType(type)}
+                            >
+                                {type}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {isLoading ? (
+                <div className="loading-state">Loading Results...</div>
+            ) : (
+                <div className="results-content">
+                    {sessionType === 'Race' && renderRaceResults()}
+                    {sessionType === 'Qualifying' && renderQualiResults()}
+                    {(sessionType === 'Sprint' || sessionType === 'Practice') && (
+                        <div className="empty-state">Detailed {sessionType} results not available for this session.</div>
+                    )}
+                </div>
+            )}
         </div>
-      ) : (
-        <>
-          {/* Podium */}
-          <div className="podium-section">
-            <div className="podium stagger-children">
-              {/* P2 */}
-              {podium[1] && (
-                <div className="podium-block podium-2">
-                  <div className="podium-driver">
-                    <div className="podium-pos">2</div>
-                    <div className="podium-team-bar" style={{ background: getTeamColour(podium[1].Constructor?.constructorId) }} />
-                    <h3 className="podium-name">{podium[1].Driver?.givenName} <strong>{podium[1].Driver?.familyName}</strong></h3>
-                    <p className="podium-team">{podium[1].Constructor?.name}</p>
-                    <p className="podium-time">{podium[1].Time?.time || podium[1].status}</p>
-                  </div>
-                  <div className="podium-stand podium-stand-2"></div>
-                </div>
-              )}
-              {/* P1 */}
-              {podium[0] && (
-                <div className="podium-block podium-1">
-                  <div className="podium-driver">
-                    <div className="podium-pos podium-pos-gold">1</div>
-                    <div className="podium-team-bar" style={{ background: getTeamColour(podium[0].Constructor?.constructorId) }} />
-                    <h3 className="podium-name">{podium[0].Driver?.givenName} <strong>{podium[0].Driver?.familyName}</strong></h3>
-                    <p className="podium-team">{podium[0].Constructor?.name}</p>
-                    <p className="podium-time">{podium[0].Time?.time || ''}</p>
-                  </div>
-                  <div className="podium-stand podium-stand-1"></div>
-                </div>
-              )}
-              {/* P3 */}
-              {podium[2] && (
-                <div className="podium-block podium-3">
-                  <div className="podium-driver">
-                    <div className="podium-pos">3</div>
-                    <div className="podium-team-bar" style={{ background: getTeamColour(podium[2].Constructor?.constructorId) }} />
-                    <h3 className="podium-name">{podium[2].Driver?.givenName} <strong>{podium[2].Driver?.familyName}</strong></h3>
-                    <p className="podium-team">{podium[2].Constructor?.name}</p>
-                    <p className="podium-time">{podium[2].Time?.time || podium[2].status}</p>
-                  </div>
-                  <div className="podium-stand podium-stand-3"></div>
-                </div>
-              )}
-            </div>
-          </div>
+    );
+};
 
-          {/* Fastest Lap */}
-          {fastestLap && (
-            <div className="fastest-lap glass-card stagger-children">
-              <span className="fastest-lap-badge">⚡ FASTEST LAP</span>
-              <div className="fastest-lap-info">
-                <div className="fastest-lap-team-bar" style={{ background: getTeamColour(fastestLap.Constructor?.constructorId) }} />
-                <span className="fastest-lap-driver">{fastestLap.Driver?.givenName} {fastestLap.Driver?.familyName}</span>
-                <span className="fastest-lap-time">{fastestLap.FastestLap?.Time?.time}</span>
-                <span className="fastest-lap-detail">Lap {fastestLap.FastestLap?.lap} · Avg {fastestLap.FastestLap?.AverageSpeed?.speed} {fastestLap.FastestLap?.AverageSpeed?.units}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Full Results Table */}
-          <div className="results-table-wrapper glass-card">
-            <table className="results-table">
-              <thead>
-                <tr>
-                  <th>POS</th>
-                  <th></th>
-                  <th>DRIVER</th>
-                  <th>TEAM</th>
-                  <th>TIME / STATUS</th>
-                  <th>PTS</th>
-                  <th>LAPS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => {
-                  const teamColour = getTeamColour(r.Constructor?.constructorId);
-                  const isFastest = r.FastestLap?.rank === '1';
-                  return (
-                    <tr key={i} className={`results-row ${i < 3 ? 'podium-row' : ''} ${isFastest ? 'fastest-row' : ''}`}>
-                      <td className="res-pos">
-                        {r.position}
-                      </td>
-                      <td>
-                        <div className="res-team-bar" style={{ background: teamColour }} />
-                      </td>
-                      <td className="res-driver">
-                        <span className="res-given">{r.Driver?.givenName}</span>{' '}
-                        <strong className="res-family">{r.Driver?.familyName}</strong>
-                        {r.Driver?.code && <span className="res-code">{r.Driver.code}</span>}
-                      </td>
-                      <td className="res-team">{r.Constructor?.name}</td>
-                      <td className="res-time">
-                        {r.Time?.time || r.status}
-                        {isFastest && <span className="fastest-indicator">⚡</span>}
-                      </td>
-                      <td className="res-points">{r.points}</td>
-                      <td className="res-laps">{r.laps}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+export default Results;

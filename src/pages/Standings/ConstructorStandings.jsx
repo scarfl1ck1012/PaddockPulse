@@ -1,81 +1,174 @@
-import { useState } from 'react';
-import { useConstructorStandings } from '../../hooks/useF1Data';
-import { LoadingSkeleton, ErrorState, SeasonSelector } from '../../components/Common/Common';
-import { getTeamColour, CURRENT_SEASON } from '../../api/constants';
-import './ConstructorStandings.css';
+import React, { useEffect, useState } from 'react';
+import { fetchConstructorStandings, fetchSeasonResults } from '../../api/jolpica';
+import { getTeamColour } from '../../utils/teamColours';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Link } from 'react-router-dom';
 
-export default function ConstructorStandings() {
-  const [season, setSeason] = useState(String(CURRENT_SEASON));
-  const { data: standings, isLoading, error, refetch } = useConstructorStandings(season);
+const ConstructorStandings = ({ year }) => {
+  const [standings, setStandings] = useState([]);
+  const [expandedTeam, setExpandedTeam] = useState(null);
+  const [teamResults, setTeamResults] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (error) {
-    return <ErrorState message={error.message} onRetry={refetch} />;
-  }
+  // For constructors, getting per-race breakdown is a bit tricky with Ergast.
+  // One way is fetching all season results and grouping by team when a team is expanded.
+  const [allSeasonResults, setAllSeasonResults] = useState(null);
 
-  const maxPoints = standings?.[0]?.points ? Number(standings[0].points) : 1;
+  useEffect(() => {
+    const loadStandings = async () => {
+      setIsLoading(true);
+      const data = await fetchConstructorStandings(year);
+      if (data?.MRData?.StandingsTable?.StandingsLists?.[0]) {
+        setStandings(data.MRData.StandingsTable.StandingsLists[0].ConstructorStandings);
+      } else {
+        setStandings([]);
+      }
+      setIsLoading(false);
+      setExpandedTeam(null);
+    };
+    loadStandings();
+  }, [year]);
+
+  const handleExpand = async (constructorId) => {
+    if (expandedTeam === constructorId) {
+      setExpandedTeam(null);
+      return;
+    }
+    setExpandedTeam(constructorId);
+
+    // If we haven't loaded the full season results yet to parse out the team data
+    if (!allSeasonResults) {
+      const res = await fetchSeasonResults(year);
+      if (res?.MRData?.RaceTable?.Races) {
+        setAllSeasonResults(res.MRData.RaceTable.Races);
+        processTeamResults(constructorId, res.MRData.RaceTable.Races);
+      }
+    } else {
+      processTeamResults(constructorId, allSeasonResults);
+    }
+  };
+
+  const processTeamResults = (constructorId, racesData) => {
+      if (teamResults[constructorId]) return; // already processed
+
+      const results = racesData.map(race => {
+          const teamRaces = race.Results.filter(r => r.Constructor.constructorId === constructorId);
+          // calculate combined points
+          const totalPoints = teamRaces.reduce((sum, r) => sum + parseFloat(r.points), 0);
+          return {
+              round: race.round,
+              raceName: race.raceName,
+              totalPoints,
+              drivers: teamRaces.map(r => ({ name: r.Driver.familyName, points: r.points, pos: r.positionText }))
+          };
+      });
+
+      setTeamResults(prev => ({ ...prev, [constructorId]: results }));
+  };
+
+  if (isLoading) return <div>Loading Constructor Standings...</div>;
 
   return (
-    <div className="page-container" id="constructor-standings-page">
-      <div className="page-header">
-        <div className="standings-header-row">
-          <div>
-            <h1 className="page-title">Constructor Standings</h1>
-            <p className="page-subtitle">Team championship points</p>
-          </div>
-          <SeasonSelector value={season} onChange={setSeason} />
-        </div>
-      </div>
-
-      {isLoading ? (
-        <LoadingSkeleton rows={10} />
-      ) : standings?.length === 0 ? (
-        <ErrorState message={`No constructor standings found for ${season}`} />
-      ) : (
-        <div className="constructor-list stagger-children">
-          {standings?.map((c, idx) => {
-            const teamColor = getTeamColour(c.Constructor?.constructorId);
-            const pctWidth = (Number(c.points) / maxPoints) * 100;
+    <div className="standings-table-container">
+      <table className="standings-table">
+        <thead>
+          <tr>
+            <th>POS</th>
+            <th>CONSTRUCTOR</th>
+            <th>NATIONALITY</th>
+            <th>POINTS</th>
+            <th>WINS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {standings.map(team => {
+            const constructorId = team.Constructor.constructorId;
+            const isExpanded = expandedTeam === constructorId;
+            const resData = teamResults[constructorId] || [];
+            const teamCol = getTeamColour(team.Constructor.name);
 
             return (
-              <div key={c.Constructor?.constructorId || idx} className="constructor-card glass-card">
-                <div className="constructor-pos">
-                  <span className={`pos-number ${idx < 3 ? 'pos-podium' : ''}`}>
-                    {c.position}
-                  </span>
-                </div>
+              <React.Fragment key={constructorId}>
+                <tr 
+                  className="standings-row" 
+                  style={{ borderLeft: `4px solid ${teamCol}` }}
+                  onClick={() => handleExpand(constructorId)}
+                >
+                  <td>{team.position}</td>
+                  <td><strong>{team.Constructor.name}</strong></td>
+                  <td>{team.Constructor.nationality}</td>
+                  <td>{team.points}</td>
+                  <td>{team.wins}</td>
+                </tr>
+                
+                {isExpanded && (
+                  <tr className="driver-detail-row">
+                    <td colSpan="5">
+                      <div className="detail-pnl animate-slide-in">
+                        
+                        <div className="detail-table-outer">
+                          <h4>{year} TEAM BREAKDOWN</h4>
+                          {resData.length > 0 ? (
+                            <table className="detail-results-table">
+                              <thead>
+                                <tr>
+                                  <th>RND</th>
+                                  <th>GRAND PRIX</th>
+                                  <th>TEAM PTS</th>
+                                  <th>WATCH</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {resData.map(r => (
+                                  <tr key={r.round}>
+                                    <td>{r.round}</td>
+                                    <td>{r.raceName}</td>
+                                    <td><strong>{r.totalPoints}</strong></td>
+                                    <td>
+                                      <Link to={`/recap?year=${year}&round=${r.round}`} className="btn-watch">Replay Race</Link>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div>Loading team data...</div>
+                          )}
+                        </div>
 
-                <div className="constructor-color-stripe" style={{ background: teamColor }} />
+                        <div className="detail-chart-outer">
+                          <h4>POINTS PER RACE</h4>
+                          {resData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={250}>
+                              <BarChart data={resData}>
+                                <XAxis dataKey="round" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                                <Tooltip
+                                  contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }}
+                                  cursor={{fill: 'rgba(255, 255, 255, 0.1)'}}
+                                  formatter={(value, name, props) => [value + ' pts', props.payload.raceName]}
+                                />
+                                <Bar dataKey="totalPoints" fill={teamCol} radius={[4, 4, 0, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              Loading chart...
+                            </div>
+                          )}
+                        </div>
 
-                <div className="constructor-info">
-                  <div className="constructor-name-row">
-                    <h3 className="constructor-name">{c.Constructor?.name}</h3>
-                    <span className="constructor-nationality">{c.Constructor?.nationality}</span>
-                  </div>
-                  <div className="constructor-bar-wrapper">
-                    <div className="constructor-bar-track">
-                      <div
-                        className="constructor-bar-fill"
-                        style={{ width: `${pctWidth}%`, background: teamColor }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="constructor-stats">
-                  <div className="constructor-stat">
-                    <span className="constructor-stat-value">{c.points}</span>
-                    <span className="constructor-stat-label">PTS</span>
-                  </div>
-                  <div className="constructor-stat">
-                    <span className="constructor-stat-value">{c.wins}</span>
-                    <span className="constructor-stat-label">WINS</span>
-                  </div>
-                </div>
-              </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             );
           })}
-        </div>
-      )}
+        </tbody>
+      </table>
     </div>
   );
-}
+};
+
+export default ConstructorStandings;

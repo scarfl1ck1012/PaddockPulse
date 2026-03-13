@@ -1,90 +1,62 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useRaceSchedule } from '../../hooks/useF1Data';
-import { LoadingSkeleton, ErrorState, SeasonSelector } from '../../components/Common/Common';
-import { getCountryFlag, CURRENT_SEASON } from '../../api/constants';
-import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+import { fetchSeasonRaces, fetchRaceResults } from '../../api/jolpica';
+import RaceCard from '../../components/schedule/RaceCard';
 import './RaceSchedule.css';
 
-export default function RaceSchedule() {
-  const [season, setSeason] = useState(String(CURRENT_SEASON));
-  const { data: races, isLoading, error, refetch } = useRaceSchedule(season);
+const RaceSchedule = () => {
+  const [races, setRaces] = useState([]);
+  const [resultsCache, setResultsCache] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const currentYear = new Date().getFullYear();
 
-  const now = dayjs();
+  useEffect(() => {
+    const loadSchedule = async () => {
+      try {
+        const data = await fetchSeasonRaces(currentYear);
+        if (data?.MRData?.RaceTable?.Races) {
+            setRaces(data.MRData.RaceTable.Races);
+            
+            const completed = data.MRData.RaceTable.Races.filter(r => new Date(`${r.date}T${r.time}`) < new Date());
+            
+            const resultsMap = {};
+            // Fetch results for the last 3 completed races to show podiums immediately
+            for (const r of completed.slice(-3)) { 
+                const res = await fetchRaceResults(currentYear, r.round);
+                if (res?.MRData?.RaceTable?.Races[0]?.Results) {
+                    resultsMap[r.round] = res.MRData.RaceTable.Races[0].Results;
+                }
+            }
+            setResultsCache(resultsMap);
+        }
+      } catch (e) {
+          console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadSchedule();
+  }, [currentYear]);
 
-  if (error) {
-    return <ErrorState message={error.message} onRetry={refetch} />;
-  }
-
-  // Find next race index
-  const nextRaceIdx = races?.findIndex(r => dayjs(r.date).isAfter(now)) ?? -1;
+  if (isLoading) return <div className="schedule-loading">Loading Calendar...</div>;
 
   return (
-    <div className="page-container" id="race-schedule-page">
-      <div className="page-header">
-        <div className="standings-header-row">
-          <div>
-            <h1 className="page-title">Race Calendar</h1>
-            <p className="page-subtitle">{season} Formula 1 World Championship</p>
-          </div>
-          <SeasonSelector value={season} onChange={setSeason} />
-        </div>
+    <div className="schedule-page">
+      <div className="schedule-header">
+        <h1>{currentYear} RACE CALENDAR</h1>
+        <p>The complete schedule for the {currentYear} FIA Formula One World Championship.</p>
       </div>
 
-      {isLoading ? (
-        <LoadingSkeleton rows={6} type="card" />
-      ) : races?.length === 0 ? (
-        <ErrorState message={`No races found for ${season}`} />
-      ) : (
-        <div className="race-grid stagger-children">
-          {races.map((race, idx) => {
-            const isPast = dayjs(race.date).isBefore(now);
-            const isNext = idx === nextRaceIdx;
-
-            return (
-              <div
-                key={`${race.season}-${race.round}`}
-                className={`race-card glass-card ${isNext ? 'race-card-next' : ''} ${isPast ? 'race-card-past' : ''}`}
-                id={`race-card-${race.round}`}
-              >
-                {isNext && <div className="race-next-badge">NEXT UP</div>}
-
-                <div className="race-card-top">
-                  <span className="race-round">ROUND {race.round}</span>
-                  <span className="race-flag">{getCountryFlag(race.Circuit?.Location?.country)}</span>
-                </div>
-
-                <h3 className="race-card-name">{race.raceName}</h3>
-                <p className="race-card-circuit">{race.Circuit?.circuitName}</p>
-                <p className="race-card-location">
-                  {race.Circuit?.Location?.locality}, {race.Circuit?.Location?.country}
-                </p>
-
-                <div className="race-card-bottom">
-                  <span className="race-card-date">
-                    {dayjs(race.date).format('D MMMM YYYY')}
-                  </span>
-                  {isPast && (
-                    <Link
-                      to={`/schedule/${race.season}/${race.round}`}
-                      className="btn btn-ghost race-results-btn"
-                    >
-                      Results →
-                    </Link>
-                  )}
-                  {isNext && (
-                    <span className="race-card-countdown">
-                      {dayjs(race.date).diff(now, 'day')} days away
-                    </span>
-                  )}
-                </div>
-
-                {isPast && <div className="race-card-checkmark">✓</div>}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <div className="schedule-list">
+        {races.map(race => (
+          <RaceCard 
+            key={race.round} 
+            race={race} 
+            results={resultsCache[race.round]} 
+          />
+        ))}
+      </div>
     </div>
   );
-}
+};
+
+export default RaceSchedule;

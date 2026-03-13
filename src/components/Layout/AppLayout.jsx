@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import Footer from './Footer';
 import './AppLayout.css';
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
 
   // Close sidebar on navigation (mobile)
   const handleNavClose = () => setSidebarOpen(false);
@@ -36,6 +36,7 @@ export default function AppLayout() {
 
       <main className="main-content">
         <Outlet />
+        <Footer />
       </main>
     </div>
   );
