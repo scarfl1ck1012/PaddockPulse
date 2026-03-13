@@ -1,0 +1,137 @@
+.standings-page {
+  padding: 40px 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.standings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.standings-header h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 3rem;
+  margin: 0;
+}
+
+.year-selector {
+  padding: 8px 16px;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.standings-tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 24px;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--accent-red);
+  border-bottom-color: var(--accent-red);
+}
+
+.standings-table-container {
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.standings-table th {
+  padding: 16px;
+  background-color: var(--bg-elevated);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.standings-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid var(--border);
+}
+
+.standings-row:hover {
+  background-color: var(--bg-elevated);
+}
+
+.standings-row td {
+  padding: 16px;
+  font-weight: 500;
+}
+
+.driver-detail-row {
+  background-color: #0a0a0f;
+}
+
+.detail-pnl {
+  padding: 24px;
+  display: flex;
+  gap: 32px;
+}
+
+.detail-table-outer {
+  flex: 1;
+}
+
+.detail-chart-outer {
+  flex: 1;
+  background-color: var(--bg-secondary);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.detail-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.detail-results-table th, .detail-results-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.btn-watch {
+  background-color: var(--accent-red);
+  color: white;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}

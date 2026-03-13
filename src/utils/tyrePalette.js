@@ -1,0 +1,7 @@
+export const TYRE_PALETTE = {
+  SOFT: "#E8002D",
+  MEDIUM: "#FFF200",
+  HARD: "#FFFFFF",
+  INTERMEDIATE: "#39B54A",
+  WET: "#0067FF"
+};

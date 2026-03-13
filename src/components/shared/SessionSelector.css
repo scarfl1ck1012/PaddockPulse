@@ -1,0 +1,42 @@
+.session-selector {
+  display: flex;
+  gap: 16px;
+  background-color: var(--bg-secondary);
+  padding: 20px;
+  border-radius: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  border: 1px solid var(--border);
+}
+
+.session-selector select {
+  padding: 10px 16px;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 4px;
+  font-size: 1rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.session-selector select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.session-selector button {
+  background-color: var(--accent-red);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.session-selector button:disabled {
+  background-color: var(--border);
+  cursor: not-allowed;
+}

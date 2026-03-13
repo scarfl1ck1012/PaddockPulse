@@ -1,0 +1,165 @@
+.race-card {
+  background-color: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.next-race-ribbon {
+  position: absolute;
+  top: 16px;
+  right: -32px;
+  background-color: var(--accent-red);
+  color: white;
+  padding: 4px 40px;
+  transform: rotate(45deg);
+  font-weight: bold;
+  font-size: 0.8rem;
+  z-index: 10;
+  animation: pulse-bg 2s infinite;
+}
+
+@keyframes pulse-bg {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
+.race-card-header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+}
+
+.race-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.race-info h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+}
+
+.round-badge {
+  background-color: var(--bg-elevated);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.circuit-name {
+  color: var(--text-secondary);
+  margin-top: 8px;
+  font-size: 1rem;
+}
+
+.session-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: var(--bg-elevated);
+  border-radius: 8px;
+}
+
+.session-row.starting-soon {
+  border: 1px solid var(--accent-red);
+  background-color: rgba(225, 6, 0, 0.1);
+}
+
+.session-name {
+  font-weight: 700;
+  width: 100px;
+}
+
+.session-date, .session-time {
+  color: var(--text-secondary);
+  width: 120px;
+}
+
+.session-countdown {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 250px;
+  justify-content: flex-end;
+}
+
+.reminder-btn {
+  background-color: transparent;
+  border: 1px solid var(--text-secondary);
+  color: var(--text-primary);
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reminder-btn:hover {
+  background-color: white;
+  color: black;
+}
+
+.completed-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.completed-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.toggle-btn, .replay-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.toggle-btn {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.replay-btn {
+  background-color: var(--accent-red);
+  color: white;
+  border: none;
+}
+
+.full-results-table {
+  background-color: var(--bg-elevated);
+  padding: 16px;
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
