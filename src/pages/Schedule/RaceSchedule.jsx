@@ -1,110 +1,166 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import useCountdown from '../../hooks/useCountdown';
+import { fetchSeasonSchedule, fetchRaceResults } from '../../services/api';
+import { getCountryFlag, CURRENT_SEASON } from '../../api/constants';
 import './RaceSchedule.css';
 
-// Setup dayjs to always render in IST
-dayjs.extend(utc);
-dayjs.extend(timezone);
-const tz = 'Asia/Kolkata';
+const YEARS = Array.from({ length: CURRENT_SEASON - 1999 }, (_, i) => CURRENT_SEASON - i);
 
-// A mock SVG Circuit layout (just a simple abstract Path for aesthetic compliance)
-const CircuitSVG = () => (
-  <svg viewBox="0 0 100 100" className="circuit-svg">
-    <path 
-      d="M20,50 Q20,20 50,20 T80,50 Q80,80 50,80 T20,50 Z" 
-      fill="none" 
-      stroke="var(--border-medium)" 
-      strokeWidth="4"
-    />
-  </svg>
-);
+function SkeletonCards() {
+  return Array.from({ length: 6 }).map((_, i) => (
+    <div key={i} className="race-card glass-card skeleton-race">
+      <div className="skeleton-line short" />
+      <div className="skeleton-line" style={{ marginTop: 12 }} />
+      <div className="skeleton-line" style={{ marginTop: 8, width: '60%' }} />
+    </div>
+  ));
+}
 
-const RaceCard = ({ race, isNext }) => {
-  // Enforce IST display
-  const raceDateIST = dayjs(race.date).tz(tz);
-  const timeString = raceDateIST.format('DD MMM YYYY • HH:mm IST');
-  
-  // Use the countdown hook (especially for the next race)
-  const { isExpired, hours, formattedString } = useCountdown(race.date);
-  
-  // "STARTING SOON" logic: if it's the next race and within 24 hours
-  const isStartingSoon = isNext && !isExpired && hours < 24;
+const RaceCard = React.memo(({ race, status }) => {
+  const raceDateTime = race.date + 'T' + (race.time || '14:00:00Z');
+  const { formattedString, isExpired } = useCountdown(raceDateTime);
+  const isPast = status === 'past';
+  const isActive = status === 'active';
+  const isUpcoming = status === 'upcoming';
+
+  const country = race.Circuit?.Location?.country || '';
+  const flag = getCountryFlag(country);
+
+  const localDate = useMemo(() => {
+    try {
+      const d = new Date(raceDateTime);
+      return new Intl.DateTimeFormat(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+      }).format(d);
+    } catch { return race.date; }
+  }, [raceDateTime, race.date]);
 
   return (
-    <div className={`race-card glass-card ${isNext ? 'next-race-highlight' : ''} ${isExpired ? 'past-race' : ''}`}>
-      {isNext && <div className="next-race-ribbon">NEXT RACE</div>}
-      
+    <div className={`race-card glass-card ${isPast ? 'past-race' : ''} ${isActive ? 'active-race' : ''}`}>
+      {isActive && <div className="active-race-ribbon">RACE WEEKEND</div>}
+      {isPast && <div className="completed-badge">✓ Completed</div>}
+
       <div className="card-header">
         <span className="round-badge">R{race.round}</span>
-        {isStartingSoon && <span className="warning-badge blink">STARTING SOON</span>}
+        {isUpcoming && !isExpired && (
+          <span className="countdown-pill">{formattedString}</span>
+        )}
       </div>
 
       <div className="card-body">
-        <div className="circuit-graphic">
-          <CircuitSVG />
-        </div>
         <div className="race-details">
-          <h3>{race.country} <span className="flag-emoji">{race.flag}</span></h3>
-          <p className="circuit-name">{race.circuit}</p>
-          <p className="race-time">{timeString}</p>
-          
-          {isNext && !isExpired && (
-            <div className="countdown-box">
-              <span className="countdown-label">Starts in: </span>
-              <span className="countdown-val">{formattedString}</span>
-            </div>
-          )}
+          <h3>{flag} {race.raceName}</h3>
+          <p className="circuit-name">{race.Circuit?.circuitName || ''}</p>
+          <p className="race-location">{race.Circuit?.Location?.locality}, {country}</p>
+          <p className="race-time">{localDate}</p>
         </div>
       </div>
 
       <div className="card-footer">
-        {isExpired ? (
-          <>
-            {/* Podium Result for completed races */}
-            <div className="mini-podium-result">
-              <span>{race.winner} 🥇</span>
-            </div>
-            <Link to={`/results?round=${race.round}`} className="action-button secondary">Full Results</Link>
-          </>
+        {isPast ? (
+          <Link to={`/schedule/${race.season || CURRENT_SEASON}/${race.round}`} className="action-button secondary">
+            Results →
+          </Link>
         ) : (
-          <button className="reminder-btn">🔔 Set Reminder</button>
+          <span className="upcoming-label">
+            {isActive ? '🏎️ This Weekend' : '📅 Upcoming'}
+          </span>
         )}
       </div>
     </div>
   );
-};
+});
 
 export default function RaceSchedule() {
-  // Mock Schedule data to fulfill structural requirements
-  const schedule = [
-    { round: 1, country: 'Australia', circuit: 'Albert Park Circuit', date: '2026-03-20T04:00:00Z', flag: '🇦🇺', winner: null },
-    { round: 2, country: 'Japan', circuit: 'Suzuka International Racing Course', date: '2026-04-05T05:00:00Z', flag: '🇯🇵', winner: null },
-    { round: 3, country: 'China', circuit: 'Shanghai International Circuit', date: '2026-04-19T07:00:00Z', flag: '🇨🇳', winner: null },
-  ];
+  const [year, setYear] = useState(CURRENT_SEASON);
+  const [races, setRaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
 
-  // In reality, this would filter based on Date.now vs race.date
-  // For UI demonstration, we treat Round 1 as 'Next'
-  const nextRaceRound = 1;
+  const loadSchedule = useCallback(async (selectedYear) => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await fetchSeasonSchedule(selectedYear, controller.signal);
+      const raceList = data?.MRData?.RaceTable?.Races || [];
+      setRaces(raceList);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSchedule(year);
+    return () => { if (abortRef.current) abortRef.current.abort(); };
+  }, [year, loadSchedule]);
+
+  // Determine status of each race
+  const racesWithStatus = useMemo(() => {
+    const now = new Date();
+    return races.map(race => {
+      const raceDate = new Date(race.date + 'T' + (race.time || '14:00:00Z'));
+      const weekendStart = new Date(raceDate);
+      weekendStart.setDate(weekendStart.getDate() - 3);
+
+      let status = 'upcoming';
+      if (raceDate < now) {
+        status = 'past';
+      } else if (weekendStart <= now && raceDate >= now) {
+        status = 'active';
+      }
+      return { race, status };
+    });
+  }, [races]);
+
+  const isArchive = year < CURRENT_SEASON;
 
   return (
     <div className="schedule-page page-container">
-      <div className="page-header">
-        <h1 className="page-title">📅 Race Schedule 2026</h1>
-        <p className="page-subtitle">All times are displayed in your device's exact equivalent of <strong style={{color:'white'}}>IST (UTC+5:30)</strong> per requirements.</p>
+      <div className="page-header flex-between">
+        <div>
+          <h1 className="page-title">📅 Race Schedule {year}</h1>
+          <p className="page-subtitle">
+            {isArchive
+              ? `Archive — ${races.length} races`
+              : `${racesWithStatus.filter(r => r.status === 'past').length} completed, ${racesWithStatus.filter(r => r.status !== 'past').length} remaining`
+            }
+          </p>
+        </div>
+        <div className="year-selector">
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))}>
+            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
       </div>
 
+      {error && (
+        <div className="error-banner glass-card">
+          <p>Failed to load schedule.</p>
+          <button className="action-button secondary" onClick={() => loadSchedule(year)}>Retry</button>
+        </div>
+      )}
+
       <div className="schedule-grid">
-        {schedule.map(race => (
-          <RaceCard 
-            key={race.round} 
-            race={race} 
-            isNext={race.round === nextRaceRound} 
-          />
-        ))}
+        {loading ? <SkeletonCards /> : (
+          racesWithStatus.map(({ race, status }) => (
+            <RaceCard key={race.round} race={race} status={isArchive ? 'past' : status} />
+          ))
+        )}
+        {!loading && races.length === 0 && (
+          <p className="empty-state">No schedule data available for {year}.</p>
+        )}
       </div>
     </div>
   );

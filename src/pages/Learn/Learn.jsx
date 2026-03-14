@@ -1,62 +1,189 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import learnContent from '../../data/learnContent.json';
 import './Learn.css';
 
-const SECTIONS = [
-  { title: 'DRS (Drag Reduction System)', content: 'DRS is a movable flap on the rear wing. Drivers can activate it in designated DRS zones when they are within 1 second of the car ahead. It reduces drag and can give a speed boost of up to 15 km/h, making overtaking easier.' },
-  { title: 'Tyre Compounds', content: 'Pirelli supplies three dry-weather compounds: Soft (red, fastest but least durable), Medium (yellow, balanced), and Hard (white, slowest but longest lasting). There are also Intermediate (green) and Wet (blue) rain tyres. Strategy around tyre choices is a critical factor in races.' },
-  { title: 'Sectors', content: 'Every F1 circuit is divided into three sectors. Timing is measured per sector to analyse driver performance. A green sector time means a personal best, whilst a purple time means the overall fastest of anyone in that session.' },
-  { title: 'The Undercut', content: 'A strategic move where a driver pits earlier than a rival to put on fresh tyres. The improved grip from new rubber allows faster laps, and the driver aims to emerge ahead of the rival after they pit later.' },
-  { title: 'The Overcut', content: 'Opposite of the undercut: a driver stays out longer on worn tyres while the rival pits. If track position is valuable or the rival gets stuck in traffic, the driver staying out can gain a net advantage.' },
-  { title: 'Safety Car & VSC', content: 'A Safety Car (SC) is deployed during major incidents, bunching the field together. The Virtual Safety Car (VSC) requires all drivers to reduce speed by ~40% without bunching up, used for smaller incidents. Both can dramatically alter race strategies.' },
-  { title: 'Pit Stops', content: 'Teams can change all four tyres in under 2 seconds. A pit stop typically costs ~22 seconds in total pit lane time. The timing of stops is a key strategic element, and a slow stop can ruin a driver\'s race.' },
-  { title: 'Qualifying Format', content: 'Qualifying has three knockout rounds: Q1 (all 20 drivers, bottom 5 eliminated), Q2 (15 drivers, bottom 5 eliminated), and Q3 (top 10 shootout for pole position). Each session has a time limit during which drivers attempt their fastest lap.' },
-  { title: 'Points System', content: 'The top 10 finishers score points: 25-18-15-12-10-8-6-4-2-1. An additional point is awarded for the fastest lap, provided the driver finishes in the top 10. Sprint races award points to the top 8: 8-7-6-5-4-3-2-1.' },
-  { title: 'Aerodynamics & Downforce', content: 'F1 cars generate enormous downforce (up to 5x their weight at high speed) through wings and floor design. This pushes the car onto the track for higher cornering speeds. Teams balance downforce vs drag based on each circuit\'s characteristics.' },
-];
+// Progress tracking via localStorage
+const PROGRESS_KEY = 'pp_learn_progress';
 
-const QUIZ = [
-  { q: 'How many DRS zones does a typical circuit have?', options: ['1', '2-3', '5+', 'None'], answer: 1 },
-  { q: 'Which tyre compound is the softest?', options: ['Hard (White)', 'Medium (Yellow)', 'Soft (Red)', 'Intermediate (Green)'], answer: 2 },
-  { q: 'How many drivers are eliminated in Q1?', options: ['3', '5', '10', '7'], answer: 1 },
-  { q: 'What does the undercut involve?', options: ['Pitting later', 'Pitting earlier', 'Not pitting at all', 'Using DRS'], answer: 1 },
-  { q: 'How many points does the race winner receive?', options: ['20', '25', '30', '15'], answer: 1 },
-];
+function getProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
+  } catch { return {}; }
+}
 
-const AccordionItem = ({ title, content, isOpen, onClick }) => (
-  <div className={`accordion-item glass-card ${isOpen ? 'open' : ''}`}>
-    <button className="accordion-header" onClick={onClick}>
-      <span>{title}</span>
-      <span className="accordion-icon">{isOpen ? '−' : '+'}</span>
-    </button>
-    {isOpen && (
-      <div className="accordion-body">
-        <p>{content}</p>
+function setProgress(data) {
+  try {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
+  } catch { /* ignore */ }
+}
+
+function ProgressBar({ completed, total }) {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return (
+    <div className="learn-progress-bar">
+      <div className="progress-track">
+        <div className="progress-fill" style={{ width: `${pct}%` }} />
       </div>
-    )}
-  </div>
-);
+      <span className="progress-text">{completed}/{total} modules completed • {pct}%</span>
+    </div>
+  );
+}
+
+function TopicCard({ topic, isCompleted, onClick }) {
+  return (
+    <button className={`topic-card glass-card hover-lift ${isCompleted ? 'completed' : ''}`} onClick={onClick}>
+      <div className="topic-icon">{topic.icon}</div>
+      <h3>{topic.title}</h3>
+      <p>{topic.description}</p>
+      {isCompleted && <span className="topic-check">✓</span>}
+    </button>
+  );
+}
+
+function QuizSection({ quiz, onComplete }) {
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleAnswer = (qIdx, optIdx) => {
+    if (submitted) return;
+    setAnswers(prev => ({ ...prev, [qIdx]: optIdx }));
+  };
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+    onComplete();
+  };
+
+  const score = Object.entries(answers).reduce((acc, [qIdx, optIdx]) => {
+    return acc + (quiz[qIdx].answer === optIdx ? 1 : 0);
+  }, 0);
+
+  const allAnswered = Object.keys(answers).length === quiz.length;
+
+  return (
+    <div className="quiz-section">
+      <h4>📝 Quick Quiz</h4>
+      <div className="quiz-questions">
+        {quiz.map((item, qIdx) => (
+          <div key={qIdx} className="quiz-question">
+            <p className="q-text">{qIdx + 1}. {item.q}</p>
+            <div className="q-options">
+              {item.options.map((opt, optIdx) => {
+                const isSelected = answers[qIdx] === optIdx;
+                const isCorrect = item.answer === optIdx;
+                let optClass = '';
+                if (submitted) {
+                  if (isCorrect) optClass = 'correct';
+                  else if (isSelected && !isCorrect) optClass = 'wrong';
+                } else if (isSelected) {
+                  optClass = 'selected';
+                }
+                return (
+                  <button
+                    key={optIdx}
+                    className={`q-option ${optClass}`}
+                    onClick={() => handleAnswer(qIdx, optIdx)}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      {!submitted ? (
+        <button
+          className="action-button primary quiz-submit"
+          onClick={handleSubmit}
+          disabled={!allAnswered}
+        >
+          Check Answers
+        </button>
+      ) : (
+        <div className="quiz-result">
+          <h4>Score: {score}/{quiz.length}</h4>
+          <p>{score === quiz.length ? '🏆 Perfect!' : score >= quiz.length / 2 ? '👍 Great job!' : '📖 Keep learning!'}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ModuleView({ topic, onBack, onComplete }) {
+  return (
+    <div className="module-view">
+      <button className="back-btn" onClick={onBack}>← Back to Topics</button>
+      
+      <div className="module-header glass-card">
+        <span className="module-icon">{topic.icon}</span>
+        <div>
+          <h2>{topic.title}</h2>
+          <p className="module-desc">{topic.description}</p>
+        </div>
+      </div>
+
+      {/* Content sections */}
+      <div className="module-content glass-card">
+        {topic.content.map((paragraph, i) => (
+          <p key={i} className="content-paragraph">{paragraph}</p>
+        ))}
+      </div>
+
+      {/* Video embed */}
+      {topic.videoUrl && (
+        <div className="module-video glass-card">
+          <h4>📺 Watch & Learn</h4>
+          <div className="video-container">
+            <iframe
+              src={topic.videoUrl}
+              title={topic.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Quiz */}
+      {topic.quiz && topic.quiz.length > 0 && (
+        <div className="glass-card" style={{ padding: 'var(--space-5)' }}>
+          <QuizSection quiz={topic.quiz} onComplete={onComplete} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Learn() {
-  const [openIndex, setOpenIndex] = useState(null);
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [progress, setProgressState] = useState(getProgress());
 
-  const handleAccordion = (idx) => {
-    setOpenIndex(openIndex === idx ? null : idx);
+  const completedCount = useMemo(() => 
+    learnContent.filter(t => progress[t.id]).length,
+    [progress]
+  );
+
+  const markComplete = (topicId) => {
+    const updated = { ...progress, [topicId]: true };
+    setProgressState(updated);
+    setProgress(updated);
   };
 
-  const handleQuizAnswer = (qIdx, optIdx) => {
-    if (quizSubmitted) return;
-    setQuizAnswers(prev => ({ ...prev, [qIdx]: optIdx }));
-  };
-
-  const handleSubmitQuiz = () => {
-    setQuizSubmitted(true);
-  };
-
-  const score = Object.entries(quizAnswers).reduce((acc, [qIdx, optIdx]) => {
-    return acc + (QUIZ[qIdx].answer === optIdx ? 1 : 0);
-  }, 0);
+  if (selectedTopic) {
+    const topic = learnContent.find(t => t.id === selectedTopic);
+    if (!topic) return null;
+    return (
+      <div className="learn-page page-container">
+        <ModuleView 
+          topic={topic} 
+          onBack={() => setSelectedTopic(null)}
+          onComplete={() => markComplete(topic.id)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="learn-page page-container">
@@ -65,69 +192,17 @@ export default function Learn() {
         <p className="page-subtitle">Master the fundamentals of Formula 1 racing</p>
       </div>
 
-      {/* 10 Accordion Sections */}
-      <section className="accordions-section">
-        {SECTIONS.map((section, idx) => (
-          <AccordionItem
-            key={idx}
-            title={section.title}
-            content={section.content}
-            isOpen={openIndex === idx}
-            onClick={() => handleAccordion(idx)}
+      <ProgressBar completed={completedCount} total={learnContent.length} />
+
+      <section className="topics-grid">
+        {learnContent.map(topic => (
+          <TopicCard
+            key={topic.id}
+            topic={topic}
+            isCompleted={!!progress[topic.id]}
+            onClick={() => setSelectedTopic(topic.id)}
           />
         ))}
-      </section>
-
-      {/* 5-Question Interactive Quiz */}
-      <section className="quiz-section glass-card">
-        <h2>Test Your Knowledge</h2>
-        <p className="quiz-desc">Answer 5 quick questions to see how well you know F1!</p>
-
-        <div className="quiz-questions">
-          {QUIZ.map((item, qIdx) => (
-            <div key={qIdx} className="quiz-question">
-              <p className="q-text">{qIdx + 1}. {item.q}</p>
-              <div className="q-options">
-                {item.options.map((opt, optIdx) => {
-                  const isSelected = quizAnswers[qIdx] === optIdx;
-                  const isCorrect = item.answer === optIdx;
-                  let optClass = '';
-                  if (quizSubmitted) {
-                    if (isCorrect) optClass = 'correct';
-                    else if (isSelected && !isCorrect) optClass = 'wrong';
-                  } else if (isSelected) {
-                    optClass = 'selected';
-                  }
-
-                  return (
-                    <button
-                      key={optIdx}
-                      className={`q-option ${optClass}`}
-                      onClick={() => handleQuizAnswer(qIdx, optIdx)}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {!quizSubmitted ? (
-          <button
-            className="action-button primary quiz-submit"
-            onClick={handleSubmitQuiz}
-            disabled={Object.keys(quizAnswers).length < QUIZ.length}
-          >
-            Submit Quiz
-          </button>
-        ) : (
-          <div className="quiz-result">
-            <h3>Your Score: {score}/{QUIZ.length}</h3>
-            <p>{score === QUIZ.length ? '🏆 Perfect! You\'re an F1 expert!' : score >= 3 ? '👍 Great job! Keep learning!' : '📖 Keep studying, you\'ll get there!'}</p>
-          </div>
-        )}
       </section>
     </div>
   );

@@ -99,3 +99,185 @@
     overflow: auto;
   }
 }
+
+/* Timing Tower */
+.timing-tower {
+  padding: var(--space-3);
+  overflow-y: auto;
+  height: 100%;
+}
+
+.timing-tower h3 {
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.tower-header {
+  display: grid;
+  grid-template-columns: 30px 1fr 70px 65px 65px 30px;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.tower-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tower-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 70px 65px 65px 30px;
+  gap: 4px;
+  padding: 6px 8px;
+  align-items: center;
+  border-left: 3px solid #666;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.02);
+  font-size: var(--text-xs);
+  transition: background 0.15s;
+}
+
+.tower-row:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.td-pos {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: white;
+}
+
+.driver-code-badge {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: var(--text-sm);
+}
+
+.td-gap, .td-last, .td-best {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.tyre-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.55rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+.no-data-text {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+  padding: var(--space-4);
+}
+
+/* Weather Widget */
+.weather-widget {
+  padding: var(--space-3);
+}
+
+.weather-widget h4 {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-3);
+}
+
+.weather-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.weather-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.weather-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.weather-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+/* Race Control Feed */
+.race-control-feed {
+  padding: var(--space-3);
+  overflow-y: auto;
+  height: 100%;
+}
+
+.race-control-feed h3 {
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.rc-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rc-message {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.03);
+  font-size: var(--text-xs);
+  align-items: flex-start;
+}
+
+.rc-time {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.rc-text {
+  flex: 1;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.rc-flag {
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.1);
+  font-weight: 700;
+}
+
+/* Offline state additions */
+.circuit-info {
+  color: var(--text-secondary);
+  margin: var(--space-2) 0;
+}
+

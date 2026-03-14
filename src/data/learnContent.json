@@ -1,0 +1,159 @@
+[
+  {
+    "id": "drs",
+    "title": "DRS (Drag Reduction System)",
+    "icon": "🏎️",
+    "description": "How the rear wing opens to boost speed on straights",
+    "content": [
+      "DRS is a movable flap on the rear wing that drivers can activate in designated DRS zones when they are within 1 second of the car ahead.",
+      "When activated, the flap opens to reduce aerodynamic drag, giving a speed boost of up to 15 km/h — making overtaking easier.",
+      "DRS cannot be used in the first 2 laps of a race or restart, and is disabled when yellow flags or Safety Cars are deployed.",
+      "Each circuit has 1–3 DRS zones, always on straights — never in corners."
+    ],
+    "quiz": [
+      { "q": "When can a driver activate DRS?", "options": ["Anytime", "Within 1 second of the car ahead", "Only on lap 1", "In corners only"], "answer": 1 },
+      { "q": "What does DRS reduce?", "options": ["Downforce in corners", "Aerodynamic drag on straights", "Tyre wear", "Engine power"], "answer": 1 }
+    ],
+    "videoUrl": "https://www.youtube-nocookie.com/embed/lfPERqOMVss"
+  },
+  {
+    "id": "tyres",
+    "title": "Tyre Compounds",
+    "icon": "🔴",
+    "description": "The science of rubber: Soft, Medium, Hard, and rain tyres",
+    "content": [
+      "Pirelli supplies five tyre compounds: Soft (red, fastest but least durable), Medium (yellow, balanced), Hard (white, slowest but longest lasting), Intermediate (green), and Wet (blue).",
+      "Teams must use at least two different dry compounds during a race — this is a mandatory rule. The strategic decision of when to pit and which compound to switch to is crucial.",
+      "Tyre degradation is a key factor: as tyres wear, they lose grip and lap times increase. The 'cliff' is when tyres suddenly lose performance dramatically.",
+      "Track temperature, driving style, and circuit characteristics all affect tyre wear rates. Some circuits are hard on tyres (like Barcelona), while others are gentle (like Monaco)."
+    ],
+    "quiz": [
+      { "q": "Which tyre compound is the softest?", "options": ["Hard (White)", "Medium (Yellow)", "Soft (Red)", "Intermediate (Green)"], "answer": 2 },
+      { "q": "How many different dry compounds must be used in a race?", "options": ["1", "2", "3", "As many as possible"], "answer": 1 }
+    ]
+  },
+  {
+    "id": "qualifying",
+    "title": "Qualifying Format",
+    "icon": "⏱️",
+    "description": "The three knockout sessions that determine starting order",
+    "content": [
+      "Qualifying has three knockout rounds: Q1 (20 minutes, all 20 drivers, bottom 5 eliminated), Q2 (15 minutes, 15 drivers, bottom 5 eliminated), and Q3 (12 minutes, top 10 shootout for pole position).",
+      "Each session has a time limit during which drivers attempt their fastest single lap. Teams often do 'out lap → hot lap → in lap' runs.",
+      "Pole position (P1 on the grid) is a significant advantage — the driver starts at the front and avoids the chaos of the midfield.",
+      "In Q3, the top 10 drivers must start the race on the tyre compound they set their Q2 fastest lap on (this rule can change by regulation year)."
+    ],
+    "quiz": [
+      { "q": "How many drivers are eliminated in Q1?", "options": ["3", "5", "10", "7"], "answer": 1 }
+    ]
+  },
+  {
+    "id": "pit-strategy",
+    "title": "Pit Strategy: Undercut & Overcut",
+    "icon": "🔧",
+    "description": "How pit stop timing can win or lose a race",
+    "content": [
+      "A pit stop in F1 typically takes about 22 seconds of total pit lane time. The tyre change itself takes under 2 seconds with a crew of ~20 mechanics.",
+      "The 'undercut' is when a driver pits earlier than a rival. Fresh tyres give faster laps, and the driver aims to emerge ahead when the rival pits later.",
+      "The 'overcut' is the opposite: staying out longer while the rival pits early. This works when track position is valuable or when fresh tyres don't give much advantage.",
+      "Teams run complex simulations to determine the optimal pit strategy, considering tyre wear, traffic, fuel load, and weather."
+    ],
+    "quiz": [
+      { "q": "What is the undercut?", "options": ["Pitting later", "Pitting earlier than a rival", "Not pitting at all", "Using more fuel"], "answer": 1 },
+      { "q": "How long is a typical pit stop?", "options": ["5 seconds", "About 22 seconds total", "1 minute", "10 seconds"], "answer": 1 }
+    ]
+  },
+  {
+    "id": "safety-car",
+    "title": "Safety Car & VSC",
+    "icon": "🚗",
+    "description": "How incidents reshape the entire race",
+    "content": [
+      "A Safety Car (SC) is deployed during major incidents, bunching the entire field together behind the safety car. This erases time gaps built up during the race.",
+      "The Virtual Safety Car (VSC) requires all drivers to reduce speed by approximately 40%, but cars do NOT bunch up. Used for smaller incidents.",
+      "Safety Cars are often a strategic goldmine — teams that haven't pitted can get a 'free' pit stop since the time loss is reduced when everyone is slow.",
+      "The Safety Car period typically lasts 3–5 laps. Drivers must stay behind the SC and cannot overtake until it comes in, though the leader controls the restart."
+    ],
+    "quiz": [
+      { "q": "What happens to gaps under a Safety Car?", "options": ["They increase", "They are erased (field bunches up)", "Nothing changes", "Only the leader gains"], "answer": 1 }
+    ]
+  },
+  {
+    "id": "points",
+    "title": "Points System",
+    "icon": "🏆",
+    "description": "How drivers and teams score championship points",
+    "content": [
+      "The top 10 finishers score points: 25-18-15-12-10-8-6-4-2-1. The race winner gets 25 points.",
+      "An additional bonus point is awarded for setting the fastest lap, but only if the driver finishes in the top 10.",
+      "Sprint races (held at selected events) award points to the top 8: 8-7-6-5-4-3-2-1.",
+      "Both Driver and Constructor championships are decided by total points across the season. The team's points are the sum of both their drivers' points."
+    ],
+    "quiz": [
+      { "q": "How many points does the race winner receive?", "options": ["20", "25", "30", "15"], "answer": 1 },
+      { "q": "Who gets the fastest lap bonus point?", "options": ["Anyone", "Only if finishing in top 10", "Only the winner", "Only P2-P5"], "answer": 1 }
+    ]
+  },
+  {
+    "id": "flags",
+    "title": "Flag Signals",
+    "icon": "🏁",
+    "description": "What each coloured flag means for drivers on track",
+    "content": [
+      "🟢 Green Flag: Track is clear, racing can proceed normally.",
+      "🟡 Yellow Flag: Danger ahead — slow down, no overtaking. Double yellow means be prepared to stop.",
+      "🔴 Red Flag: Session stopped immediately. All cars must return to pit lane.",
+      "🔵 Blue Flag: You are about to be lapped. Let the faster car through within 3 flag points or face a penalty.",
+      "🏁 Chequered Flag: Session has ended (race finish!).",
+      "⬛🟨 Black and Orange: Your car has a mechanical problem — return to the pits."
+    ],
+    "quiz": [
+      { "q": "What does a blue flag mean?", "options": ["Danger ahead", "Faster car approaching, let them pass", "Session over", "Pit now"], "answer": 1 }
+    ]
+  },
+  {
+    "id": "sprint",
+    "title": "Sprint Weekend Format",
+    "icon": "⚡",
+    "description": "The compressed race weekend with an extra short race",
+    "content": [
+      "Sprint weekends replace one practice session with a shorter Sprint Race (about 100km, roughly 1/3 of the full race distance).",
+      "The weekend format is: FP1 → Sprint Qualifying (SQ) → Sprint Race → Qualifying → Grand Prix.",
+      "Sprint Qualifying determines the Sprint Race grid. Standard Qualifying determines the Grand Prix grid.",
+      "Sprint races award points to the top 8 finishers (8-7-6-5-4-3-2-1), meaning extra points are up for grabs."
+    ],
+    "quiz": [
+      { "q": "How long is a Sprint Race?", "options": ["Full race distance", "About 100km (1/3 distance)", "10 laps", "Half distance"], "answer": 1 }
+    ]
+  },
+  {
+    "id": "aero",
+    "title": "Aerodynamics & Downforce",
+    "icon": "💨",
+    "description": "How F1 cars generate grip through air flow engineering",
+    "content": [
+      "F1 cars generate enormous downforce — up to 5 times their own weight at high speed — through wings, floor design, and diffusers.",
+      "Downforce pushes the car onto the track, allowing higher cornering speeds. But more downforce = more drag = slower straights.",
+      "Teams adjust wing angles for each circuit: more downforce for Monaco (tight, twisty) and less for Monza (long straights).",
+      "The underfloor 'ground effect' generates most of an F1 car's downforce, using carefully shaped tunnels to create low pressure beneath the car."
+    ],
+    "quiz": [
+      { "q": "How much downforce can an F1 car generate?", "options": ["Equal to its weight", "2x its weight", "Up to 5x its weight", "10x its weight"], "answer": 2 }
+    ]
+  },
+  {
+    "id": "sectors",
+    "title": "Sectors & Timing",
+    "icon": "📊",
+    "description": "How lap times are broken down for analysis",
+    "content": [
+      "Every F1 circuit is divided into three sectors. Timing is measured per sector to analyse driver performance.",
+      "A green sector time means a personal best for that driver. A purple sector time means the overall fastest of anyone in that session.",
+      "Sector analysis helps teams understand where they are gaining or losing time compared to rivals.",
+      "Ideal lap time is the theoretical best: combining a driver's best S1 + best S2 + best S3, even if they came from different laps."
+    ],
+    "quiz": [
+      { "q": "What does a purple sector time mean?", "options": ["A penalty", "Session fastest", "Personal best", "Slow sector"], "answer": 1 }
+    ]
+  }
+]

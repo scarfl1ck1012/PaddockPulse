@@ -1,74 +1,126 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import useLiveSession from '../../hooks/useLiveSession';
 import useCountdown from '../../hooks/useCountdown';
-// Assume we have a hook or jolpica API call for these stats, 
-// using static mocks here for immediate visual compliance while data layer is pending 
-// if the previous backend hooks are missing.
+import useSchedule from '../../hooks/useSchedule';
+import { getTeamColour } from '../../utils/teamColours';
+import { getCountryFlag } from '../../api/constants';
 import './Dashboard.css';
+
+function SkeletonCard() {
+  return (
+    <div className="stat-card glass-card skeleton-card">
+      <div className="skeleton-line short" />
+      <div className="skeleton-line" />
+    </div>
+  );
+}
+
+function HeroBanner({ isLive, nextRace, loading }) {
+  // Build the countdown target date from the next race
+  const raceDateTime = nextRace
+    ? nextRace.date + 'T' + (nextRace.time || '14:00:00Z')
+    : null;
+  const { isExpired, formattedString } = useCountdown(raceDateTime || '2099-01-01T00:00:00Z');
+
+  if (loading) {
+    return (
+      <section className="hero-banner glass-card is-countdown">
+        <div className="countdown-container">
+          <div className="skeleton-line short" style={{ margin: '0 auto' }} />
+          <div className="skeleton-line" style={{ width: '60%', margin: '12px auto' }} />
+        </div>
+      </section>
+    );
+  }
+
+  if (isLive) {
+    return (
+      <section className="hero-banner glass-card is-live">
+        <div className="live-now-container">
+          <span className="pulsing-dot"></span>
+          <div className="live-text-block">
+            <h1 className="live-title">LIVE NOW</h1>
+            <p className="live-subtitle">
+              {nextRace ? `${nextRace.raceName} — ${nextRace.Circuit?.circuitName || ''}` : 'Track activity in progress'}
+            </p>
+          </div>
+          <Link to="/live" className="action-button primary">Enter PitWall</Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="hero-banner glass-card is-countdown">
+      <div className="countdown-container">
+        <h2 className="next-session-title">NEXT SESSION STARTS IN</h2>
+        <div className="timer-display">{isExpired ? 'RACE WEEKEND' : formattedString}</div>
+        {nextRace && (
+          <p className="session-info">
+            {getCountryFlag(nextRace.Circuit?.Location?.country || '')} {nextRace.raceName} • {nextRace.Circuit?.circuitName || ''}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default function Dashboard() {
   const { isLive } = useLiveSession();
-  
-  // Example next session date
-  const nextSessionDate = '2026-03-20T14:00:00+05:30'; 
-  const { isExpired, formattedString } = useCountdown(nextSessionDate);
-
-  // Mock Quick Stats Data (as Jolpica integration would provide)
-  const quickStats = {
-    championshipLeader: { name: 'Max Verstappen', points: 395, team: 'RedBull' },
-    constructorLeader: { name: 'McLaren', points: 512, colour: '#FF8000' },
-    lastWinner: { name: 'Lando Norris', race: 'Abu Dhabi GP', date: 'Dec 8, 2025' }
-  };
+  const { nextRace, loading, error, lastRacePodium, driverLeader, constructorLeader, reload } = useSchedule();
 
   return (
     <div className="dashboard-container page-container">
-      
+
       {/* 1. Dynamic Hero / Session Banner */}
-      <section className={`hero-banner glass-card ${isLive ? 'is-live' : 'is-countdown'}`}>
-        {isLive ? (
-          <div className="live-now-container">
-            <span className="pulsing-dot"></span>
-            <div className="live-text-block">
-              <h1 className="live-title">LIVE NOW</h1>
-              <p className="live-subtitle">Track activity in progress</p>
-            </div>
-            <Link to="/live" className="action-button primary">Enter PitWall</Link>
-          </div>
-        ) : (
-          <div className="countdown-container">
-            <h2 className="next-session-title">NEXT SESSION STARTS IN</h2>
-            <div className="timer-display">{formattedString}</div>
-            <p className="session-info">Australian Grand Prix • FP1</p>
-          </div>
-        )}
-      </section>
+      <HeroBanner isLive={isLive} nextRace={nextRace} loading={loading} />
+
+      {/* Error state */}
+      {error && (
+        <div className="error-banner glass-card">
+          <p>Failed to load data.</p>
+          <button className="action-button secondary" onClick={reload}>Retry</button>
+        </div>
+      )}
 
       {/* 2. Quick Stats Strip */}
       <section className="quick-stats-strip">
-        <div className="stat-card glass-card">
-          <span className="stat-label">Driver Standings Leader</span>
-          <div className="stat-value">
-            <span className="stat-name">{quickStats.championshipLeader.name}</span>
-            <span className="stat-number">{quickStats.championshipLeader.points} pts</span>
-          </div>
-        </div>
-        <div className="stat-card glass-card">
-          <span className="stat-label">Constructor Leader</span>
-          <div className="stat-value">
-            <span className="stat-name" style={{ color: quickStats.constructorLeader.colour }}>
-              {quickStats.constructorLeader.name}
-            </span>
-            <span className="stat-number">{quickStats.constructorLeader.points} pts</span>
-          </div>
-        </div>
-        <div className="stat-card glass-card">
-          <span className="stat-label">Last Race Winner</span>
-          <div className="stat-value">
-            <span className="stat-name">{quickStats.lastWinner.name}</span>
-            <span className="stat-detail">{quickStats.lastWinner.race}</span>
-          </div>
-        </div>
+        {loading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          <>
+            <div className="stat-card glass-card">
+              <span className="stat-label">Driver Standings Leader</span>
+              <div className="stat-value">
+                <span className="stat-name">{driverLeader?.name || '—'}</span>
+                <span className="stat-number">{driverLeader?.points || 0} pts</span>
+              </div>
+            </div>
+            <div className="stat-card glass-card">
+              <span className="stat-label">Constructor Leader</span>
+              <div className="stat-value">
+                <span className="stat-name" style={{ color: constructorLeader ? getTeamColour(constructorLeader.name) : 'inherit' }}>
+                  {constructorLeader?.name || '—'}
+                </span>
+                <span className="stat-number">{constructorLeader?.points || 0} pts</span>
+              </div>
+            </div>
+            <div className="stat-card glass-card">
+              <span className="stat-label">Last Race Winner</span>
+              <div className="stat-value">
+                <span className="stat-name">
+                  {lastRacePodium?.p1 ? `${lastRacePodium.p1.Driver.givenName} ${lastRacePodium.p1.Driver.familyName}` : '—'}
+                </span>
+                <span className="stat-detail">{lastRacePodium?.raceName || ''}</span>
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       {/* 3. Four Feature Cards */}
@@ -101,20 +153,28 @@ export default function Dashboard() {
           <h3>Last Race Podium</h3>
           <Link to="/results" className="text-link">Full Results &rarr;</Link>
         </div>
-        <div className="podium-visual-mini">
-          <div className="podium-step step-2">
-            <span className="driver-code">LEC</span>
-            <div className="block silver">P2</div>
+        {loading ? (
+          <div className="podium-visual-mini">
+            <div className="skeleton-line" style={{ width: '80%', margin: '20px auto' }} />
           </div>
-          <div className="podium-step step-1">
-            <span className="driver-code">NOR</span>
-            <div className="block gold">P1</div>
+        ) : lastRacePodium ? (
+          <div className="podium-visual-mini">
+            <div className="podium-step step-2">
+              <span className="driver-code">{lastRacePodium.p2?.Driver?.code || '—'}</span>
+              <div className="block silver">P2</div>
+            </div>
+            <div className="podium-step step-1">
+              <span className="driver-code">{lastRacePodium.p1?.Driver?.code || '—'}</span>
+              <div className="block gold">P1</div>
+            </div>
+            <div className="podium-step step-3">
+              <span className="driver-code">{lastRacePodium.p3?.Driver?.code || '—'}</span>
+              <div className="block bronze">P3</div>
+            </div>
           </div>
-          <div className="podium-step step-3">
-            <span className="driver-code">PIA</span>
-            <div className="block bronze">P3</div>
-          </div>
-        </div>
+        ) : (
+          <p className="text-muted" style={{ padding: '20px', textAlign: 'center' }}>No race results yet this season.</p>
+        )}
       </section>
 
     </div>

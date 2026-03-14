@@ -28,7 +28,7 @@ export function useConstructorStandings(season = 'current') {
 export function useRaceSchedule(season = 'current') {
   return useQuery({
     queryKey: ['raceSchedule', season],
-    queryFn: () => jolpica.fetchRaceSchedule(season),
+    queryFn: () => jolpica.fetchSeasonSchedule(season),
     staleTime: 30 * 60 * 1000, // 30 min — schedule doesn't change often
     retry: 2,
   });
@@ -77,6 +77,7 @@ export function useOpenF1Meetings(year) {
   return useQuery({
     queryKey: ['openf1Meetings', year],
     queryFn: () => openf1.fetchMeetings(year),
+    enabled: !!year,
     staleTime: 30 * 60 * 1000,
     retry: 2,
   });
@@ -143,10 +144,10 @@ export function useOpenF1Positions(sessionKey = 'latest') {
   });
 }
 
-export function useOpenF1Location(sessionKey = 'latest', driverNumber) {
+export function useOpenF1Location(sessionKey = 'latest') {
   return useQuery({
-    queryKey: ['openf1Location', sessionKey, driverNumber],
-    queryFn: () => openf1.fetchLocation(sessionKey, driverNumber),
+    queryKey: ['openf1Location', sessionKey],
+    queryFn: () => openf1.fetchLocation(sessionKey),
     staleTime: 30 * 1000,
     retry: 2,
   });
