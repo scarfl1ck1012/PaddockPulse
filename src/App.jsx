@@ -10,7 +10,7 @@ import Standings from './pages/Standings/Standings';
 import RaceSchedule from './pages/Schedule/RaceSchedule';
 import Results from './pages/Results/Results';
 import Compare from './pages/Compare/Compare';
-import Recap from './pages/Recap/Recap';
+import RaceRecap from './components/RaceRecap/RaceRecap';
 
 // Optional Sub-pages (kept for compatibility with existing components)
 import RaceDetail from './pages/Schedule/RaceDetail';
@@ -55,7 +55,7 @@ export default function App() {
             <Route path="/compare" element={<Compare />} />
             
             {/* 8. Recap / Replay */}
-            <Route path="/recap" element={<Recap />} />
+            <Route path="/recap" element={<RaceRecap />} />
             
             {/* 9 & 10. Strict Redirects as required by prompt */}
             <Route path="/strategy" element={<Navigate to="/live" replace />} />

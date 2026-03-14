@@ -1,0 +1,469 @@
+/* RaceRecap.css */
+
+.recap-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px); /* Leave room for header/nav */
+  padding: 16px;
+  gap: 16px;
+  background-color: #050508;
+  color: #fff;
+  overflow: hidden;
+}
+
+.recap-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recap-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+}
+
+/* Glass panel utility */
+.glass-panel {
+  background: rgba(30, 30, 40, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+}
+
+/* Layout Grid */
+.recap-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr 280px;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+  flex-grow: 1;
+  min-height: 0; /* Important for scrollable children */
+}
+
+/* Selector */
+.race-selector {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.sel-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sel-group.flex-1 {
+  flex: 1;
+}
+
+.sel-group label {
+  font-size: 0.85rem;
+  color: #aaa;
+  text-transform: uppercase;
+}
+
+.sel-group select {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.load-btn {
+  background: var(--f1-red, #e10600);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.load-btn:hover:not(:disabled) {
+  opacity: 0.8;
+}
+.load-btn:disabled {
+  background: #444;
+  cursor: not-allowed;
+}
+
+/* Leaderboard */
+.replay-leaderboard {
+  grid-column: 1;
+  grid-row: 2;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* Reset for flush rows */
+}
+
+.lb-header {
+  display: flex;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.75rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  gap: 12px;
+}
+
+.lb-header span:nth-child(1) { width: 30px; }
+.lb-header span:nth-child(2) { flex: 1; }
+.lb-header span:nth-child(3) { width: 70px; text-align: right; }
+
+.lb-rows {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.lb-row:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.lb-row.is-selected {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lb-row.is-retired {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.lb-pos { width: 30px; font-weight: bold; font-family: monospace; }
+.lb-color-strip { width: 4px; height: 16px; border-radius: 2px; }
+.lb-name { flex: 1; font-weight: 600; }
+.lb-tyre-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  border: 1px solid;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lb-gap { width: 70px; font-family: monospace; font-size: 0.9rem; text-align: right; }
+
+/* Canvas Area */
+.replay-main-view {
+  grid-column: 2;
+  grid-row: 2;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+/* Right Panel (Race control, Weather, Telemetry) */
+.replay-right-panel {
+  grid-column: 3;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+/* Driver Telemetry */
+.driver-telemetry {
+  display: flex;
+  flex-direction: column;
+}
+.dt-header {
+  border-bottom: 2px solid #fff;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+.dt-header h3 { margin: 0; font-size: 1rem; }
+.dt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.dt-stat {
+  background: rgba(0,0,0,0.4);
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.dt-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 4px;}
+.dt-val { font-size: 1.4rem; font-weight: bold; font-family: monospace; }
+.dt-val-large { font-size: 2.2rem; font-weight: 900; line-height: 1; text-align: center; color: white;}
+.dt-unit { font-size: 0.7rem; color: #aaa; margin-left: 2px;}
+
+.dt-bar-bg {
+  background: rgba(255,255,255,0.1);
+  height: 6px;
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.dt-bar-bg.vertical {
+  height: 40px;
+  width: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+}
+.dt-bar-fill { height: 100%; transition: all 0.1s linear; }
+.dt-bar-fill.speed { background: #fff; }
+.dt-bar-fill.green { background: #00ea65; width: 100%; }
+
+.dt-circle {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  margin: 4px auto 0;
+  border: 2px solid rgba(255,255,255,0.2);
+  transition: all 0.1s;
+}
+.dt-circle.active.red {
+  background: #ff3232;
+  border-color: #ff3232;
+  box-shadow: 0 0 10px #ff3232;
+}
+
+.dt-badge {
+  padding: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+.dt-badge.open { background: #00ea65; color: #000; }
+.dt-badge.closed { background: rgba(255,255,255,0.1); color: #888; }
+
+.text-center { text-align: center; }
+
+/* Race Control Feed */
+.rc-feed {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.rc-feed h3 { margin: 0 0 12px 0; font-size: 1rem; }
+.rc-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.rc-msg {
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.05);
+  border-left: 4px solid #666;
+}
+.flag-green { border-left-color: #00ea65; background: rgba(0, 234, 101, 0.1); }
+.flag-yellow { border-left-color: #ffe600; background: rgba(255, 230, 0, 0.1); }
+.flag-red { border-left-color: #ff3232; background: rgba(255, 50, 50, 0.1); color: #ff3232; font-weight: bold;}
+.flag-sc { border-left-color: #ff8000; background: rgba(255, 128, 0, 0.1); }
+.flag-chequered { border-left: 4px dashed #fff; }
+
+/* Weather */
+.weather-widget h3 { margin: 0 0 12px 0; font-size: 1rem; }
+.wx-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.wx-item {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,0,0,0.3);
+  padding: 8px;
+  border-radius: 6px;
+}
+.wx-item span { font-size: 0.75rem; color: #888; text-transform: uppercase;}
+.wx-item strong { font-size: 1.1rem; }
+
+/* Controls Footer */
+.replay-controls {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rc-buttons-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rc-btn {
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.rc-btn:hover { background: rgba(255,255,255,0.2); }
+.rc-btn.play-btn { background: white; color: black; font-weight: bold; padding: 8px 24px;}
+.rc-btn.play-btn:hover { background: #ddd; }
+
+.rc-speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 24px;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+.rc-speed-btn {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.rc-speed-btn:hover { background: #e10600; }
+
+.rc-toggles {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+}
+
+.rc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* Scrubber */
+.rc-scrubber-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.rc-time {
+  font-family: monospace;
+  font-size: 1rem;
+  width: 60px;
+  text-align: center;
+}
+
+.rc-timeline-wrap {
+  flex-grow: 1;
+  position: relative;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+.rc-slider {
+  width: 100%;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  z-index: 2;
+  cursor: pointer;
+}
+.rc-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+.rc-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+.rc-progress-fill {
+  position: absolute;
+  left: 0;
+  height: 8px;
+  background: var(--f1-red, #e10600);
+  border-radius: 4px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  grid-column: 1 / -1;
+  grid-row: 2 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(5px);
+  border-radius: 12px;
+  z-index: 10;
+}
+.loading-overlay h2 { margin: 0 0 16px 0; }
+.loading-overlay p { color: #aaa; margin: 0 0 24px 0; }
+.loading-bar {
+  width: 300px;
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.loading-fill {
+  height: 100%;
+  background: #00ea65;
+  transition: width 0.2s;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .recap-layout {
+    grid-template-columns: 240px 1fr;
+  }
+  .replay-right-panel {
+    display: none; /* Hide telemetry/weather on smaller screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .recap-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
+  }
+  .replay-leaderboard {
+    display: none; /* Hide leaderboard on mobile */
+  }
+  .replay-main-view {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
