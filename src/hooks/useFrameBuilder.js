@@ -235,6 +235,15 @@ export function useFrameBuilder() {
       
       // Build in chunks to avoid blocking the main thread
       const CHUNK_SIZE = 500;
+      
+      // OPTIMIZATION: pre-extract the sorted keys for carByTime so we don't do it 150,000 times inside the loop
+      const cachedCarTimes = {};
+      driverNumbers.forEach(num => {
+        if (driverDataMap[num]) {
+          cachedCarTimes[num] = Object.keys(driverDataMap[num].carByTime).map(Number).sort((a,b) => a-b);
+        }
+      });
+
       for (let i = 0; i < totalFrames; i++) {
         if (controller.signal.aborted) throw new Error('Aborted');
         
@@ -266,10 +275,10 @@ export function useFrameBuilder() {
           // Get tyre
           const tyre = d.getTyreAtLap(lap);
           
-          // Get car data (find closest timestamp in carByTime)
-          const carTimes = Object.keys(d.carByTime).map(Number).sort((a,b) => a-b);
+          // Get car data using PRE-CALCULATED cached arrays
+          const carTimes = cachedCarTimes[num];
           let car = { speed: 0, gear: 0, drs: 0, throttle: 0, brake: false };
-          if (carTimes.length > 0) {
+          if (carTimes && carTimes.length > 0) {
              const carIdx = findClosestIndex(carTimes, t);
              car = d.carByTime[carTimes[carIdx]] || car;
           }
