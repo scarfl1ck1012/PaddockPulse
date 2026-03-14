@@ -21,9 +21,11 @@ export default function RaceSelector({ onSelect, isBuilding }) {
         
         let raceList = data?.MRData?.RaceTable?.Races || [];
         
-        // Filter out future races
+        // Filter out future races and limit to 5 per prompt request
         const today = new Date();
-        raceList = raceList.filter(r => new Date(`${r.date}T${r.time || '00:00:00Z'}`) < today);
+        raceList = raceList
+           .filter(r => new Date(`${r.date}T${r.time || '00:00:00Z'}`) < today)
+           .slice(0, 5);
         
         setRaces(raceList);
         if (raceList.length > 0) {

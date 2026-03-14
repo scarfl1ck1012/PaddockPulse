@@ -32,6 +32,11 @@ export function useFrameBuilder() {
       setLoadingMessage('Fetching driver info...');
       setLoadingProgress(5);
       const driversRaw = await getDrivers(sessionKey);
+      
+      if (!Array.isArray(driversRaw)) {
+        throw new Error("OpenF1 API returned invalid driver data. Please try another race.");
+      }
+
       const driverMap = {}; // { driverNumber: { code, teamColor, fullName } }
       driversRaw.forEach(d => {
         driverMap[d.driver_number] = {
@@ -46,7 +51,9 @@ export function useFrameBuilder() {
 
       setLoadingMessage('Fetching tyre stints...');
       setLoadingProgress(10);
-      const stints = await getStints(sessionKey);
+      let stints = await getStints(sessionKey);
+      if (!Array.isArray(stints)) stints = [];
+
       // Build stint lookup: { driverNumber: [{ lapStart, lapEnd, compound, tyreAge }] }
       const stintMap = {};
       stints.forEach(s => {
@@ -61,12 +68,14 @@ export function useFrameBuilder() {
 
       setLoadingMessage('Fetching lap data...');
       setLoadingProgress(15);
-      const lapsRaw = await getLaps(sessionKey);
+      let lapsRaw = await getLaps(sessionKey);
+      if (!Array.isArray(lapsRaw)) lapsRaw = [];
       const maxLap = lapsRaw.length > 0 ? Math.max(...lapsRaw.map(l => l.lap_number)) : 0;
       setTotalLaps(maxLap);
       
       // Fetch race control
-      const rcEvents = await getRaceControl(sessionKey);
+      let rcEvents = await getRaceControl(sessionKey);
+      if (!Array.isArray(rcEvents)) rcEvents = [];
       setRaceControlLogs(rcEvents);
 
       // --- STEP 2: Fetch X/Y location + car data for ALL drivers ---
@@ -82,10 +91,13 @@ export function useFrameBuilder() {
         setLoadingProgress(15 + (i / driverNumbers.length) * 55);
 
         // Fetch location + car data in parallel for this driver
-        const [locationRaw, carDataRaw] = await Promise.all([
+        let [locationRaw, carDataRaw] = await Promise.all([
           getDriverLocation(sessionKey, num),
           getDriverCarData(sessionKey, num),
         ]);
+
+        if (!Array.isArray(locationRaw)) locationRaw = [];
+        if (!Array.isArray(carDataRaw)) carDataRaw = [];
 
         if (locationRaw.length === 0) continue;
 
