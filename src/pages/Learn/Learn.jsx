@@ -1,21 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import learnContent from '../../data/learnContent.json';
+import learnData from '../../data/learnContent.json';
 import './Learn.css';
 
-// Progress tracking via localStorage
-const PROGRESS_KEY = 'pp_learn_progress';
+const modules = learnData.modules;
+const PROGRESS_KEY = 'paddockpulse_learn_progress';
 
 function getProgress() {
   try {
-    return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
-  } catch { return {}; }
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || { completedModules: [], quizScores: {} };
+  } catch { return { completedModules: [], quizScores: {} }; }
 }
 
-function setProgress(data) {
-  try {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
-  } catch { /* ignore */ }
+function saveProgress(data) {
+  try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(data)); } catch {}
 }
+
+// --- Components ---
 
 function ProgressBar({ completed, total }) {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -29,18 +29,16 @@ function ProgressBar({ completed, total }) {
   );
 }
 
-function TopicCard({ topic, isCompleted, onClick }) {
+function FactCard({ text }) {
   return (
-    <button className={`topic-card glass-card hover-lift ${isCompleted ? 'completed' : ''}`} onClick={onClick}>
-      <div className="topic-icon">{topic.icon}</div>
-      <h3>{topic.title}</h3>
-      <p>{topic.description}</p>
-      {isCompleted && <span className="topic-check">✓</span>}
-    </button>
+    <div className="fact-card">
+      <span className="fact-icon">💡</span>
+      <p>{text}</p>
+    </div>
   );
 }
 
-function QuizSection({ quiz, onComplete }) {
+function QuizBlock({ quizzes, onScoreUpdate }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -51,93 +49,100 @@ function QuizSection({ quiz, onComplete }) {
 
   const handleSubmit = () => {
     setSubmitted(true);
-    onComplete();
+    const score = quizzes.reduce((acc, q, i) =>
+      acc + (answers[i] === q.correct ? 1 : 0), 0);
+    onScoreUpdate(score, quizzes.length);
   };
 
-  const score = Object.entries(answers).reduce((acc, [qIdx, optIdx]) => {
-    return acc + (quiz[qIdx].answer === optIdx ? 1 : 0);
-  }, 0);
-
-  const allAnswered = Object.keys(answers).length === quiz.length;
+  const allAnswered = Object.keys(answers).length === quizzes.length;
+  const score = quizzes.reduce((acc, q, i) =>
+    acc + (answers[i] === q.correct ? 1 : 0), 0);
 
   return (
     <div className="quiz-section">
-      <h4>📝 Quick Quiz</h4>
+      <h4>📝 Knowledge Check</h4>
       <div className="quiz-questions">
-        {quiz.map((item, qIdx) => (
+        {quizzes.map((q, qIdx) => (
           <div key={qIdx} className="quiz-question">
-            <p className="q-text">{qIdx + 1}. {item.q}</p>
+            <p className="q-text">{qIdx + 1}. {q.question}</p>
             <div className="q-options">
-              {item.options.map((opt, optIdx) => {
+              {q.options.map((opt, optIdx) => {
                 const isSelected = answers[qIdx] === optIdx;
-                const isCorrect = item.answer === optIdx;
-                let optClass = '';
+                const isCorrect = q.correct === optIdx;
+                let cls = '';
                 if (submitted) {
-                  if (isCorrect) optClass = 'correct';
-                  else if (isSelected && !isCorrect) optClass = 'wrong';
-                } else if (isSelected) {
-                  optClass = 'selected';
-                }
+                  if (isCorrect) cls = 'correct';
+                  else if (isSelected && !isCorrect) cls = 'wrong';
+                } else if (isSelected) cls = 'selected';
                 return (
-                  <button
-                    key={optIdx}
-                    className={`q-option ${optClass}`}
-                    onClick={() => handleAnswer(qIdx, optIdx)}
-                  >
+                  <button key={optIdx} className={`q-option ${cls}`} onClick={() => handleAnswer(qIdx, optIdx)}>
                     {opt}
                   </button>
                 );
               })}
             </div>
+            {submitted && q.explanation && (
+              <p className="q-explanation">{q.explanation}</p>
+            )}
           </div>
         ))}
       </div>
       {!submitted ? (
-        <button
-          className="action-button primary quiz-submit"
-          onClick={handleSubmit}
-          disabled={!allAnswered}
-        >
+        <button className="action-button primary quiz-submit" onClick={handleSubmit} disabled={!allAnswered}>
           Check Answers
         </button>
       ) : (
         <div className="quiz-result">
-          <h4>Score: {score}/{quiz.length}</h4>
-          <p>{score === quiz.length ? '🏆 Perfect!' : score >= quiz.length / 2 ? '👍 Great job!' : '📖 Keep learning!'}</p>
+          <h4>Score: {score}/{quizzes.length}</h4>
+          <p>{score === quizzes.length ? '🏆 Perfect!' : score >= quizzes.length / 2 ? '👍 Great job!' : '📖 Keep learning!'}</p>
         </div>
       )}
     </div>
   );
 }
 
-function ModuleView({ topic, onBack, onComplete }) {
+function ModuleView({ mod, onBack, onComplete }) {
+  const quizzes = mod.sections.filter(s => s.type === 'quiz');
+  const textSections = mod.sections.filter(s => s.type === 'text' || s.type === 'fact');
+
+  const handleScoreUpdate = (score, total) => {
+    onComplete(score, total);
+  };
+
   return (
     <div className="module-view">
       <button className="back-btn" onClick={onBack}>← Back to Topics</button>
-      
+
       <div className="module-header glass-card">
-        <span className="module-icon">{topic.icon}</span>
+        <span className="module-icon">{mod.icon}</span>
         <div>
-          <h2>{topic.title}</h2>
-          <p className="module-desc">{topic.description}</p>
+          <div className="module-meta">
+            {mod.isNew2026 && <span className="new-2026-badge">NEW 2026</span>}
+            <span className="category-badge">{mod.category}</span>
+            <span className="difficulty-badge">{mod.difficulty}</span>
+            <span className="read-time">{mod.readTime}</span>
+          </div>
+          <h2>{mod.title}</h2>
+          <p className="module-desc">{mod.subtitle}</p>
         </div>
       </div>
 
       {/* Content sections */}
       <div className="module-content glass-card">
-        {topic.content.map((paragraph, i) => (
-          <p key={i} className="content-paragraph">{paragraph}</p>
-        ))}
+        {textSections.map((section, i) => {
+          if (section.type === 'fact') return <FactCard key={i} text={section.text} />;
+          return <p key={i} className="content-paragraph">{section.content}</p>;
+        })}
       </div>
 
       {/* Video embed */}
-      {topic.videoUrl && (
+      {mod.videoId && (
         <div className="module-video glass-card">
           <h4>📺 Watch & Learn</h4>
           <div className="video-container">
             <iframe
-              src={topic.videoUrl}
-              title={topic.title}
+              src={`https://www.youtube-nocookie.com/embed/${mod.videoId}?rel=0&modestbranding=1`}
+              title={mod.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               loading="lazy"
@@ -146,40 +151,73 @@ function ModuleView({ topic, onBack, onComplete }) {
         </div>
       )}
 
-      {/* Quiz */}
-      {topic.quiz && topic.quiz.length > 0 && (
+      {/* Quizzes */}
+      {quizzes.length > 0 && (
         <div className="glass-card" style={{ padding: 'var(--space-5)' }}>
-          <QuizSection quiz={topic.quiz} onComplete={onComplete} />
+          <QuizBlock quizzes={quizzes} onScoreUpdate={handleScoreUpdate} />
         </div>
       )}
     </div>
   );
 }
 
-export default function Learn() {
-  const [selectedTopic, setSelectedTopic] = useState(null);
-  const [progress, setProgressState] = useState(getProgress());
-
-  const completedCount = useMemo(() => 
-    learnContent.filter(t => progress[t.id]).length,
-    [progress]
+function TopicCard({ mod, isCompleted, quizScore, onClick }) {
+  return (
+    <button className={`topic-card glass-card hover-lift ${isCompleted ? 'completed' : ''}`} onClick={onClick}>
+      {mod.isNew2026 && <span className="card-new-badge">2026</span>}
+      <div className="topic-icon">{mod.icon}</div>
+      <h3>{mod.title}</h3>
+      <p>{mod.subtitle}</p>
+      <div className="card-meta">
+        <span className="meta-category">{mod.category}</span>
+        <span className="meta-time">{mod.readTime}</span>
+      </div>
+      {isCompleted && <span className="topic-check">✓</span>}
+      {quizScore && <span className="quiz-score-badge">{quizScore}</span>}
+    </button>
   );
+}
 
-  const markComplete = (topicId) => {
-    const updated = { ...progress, [topicId]: true };
-    setProgressState(updated);
+// --- Main ---
+
+export default function Learn() {
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [progress, setProgress] = useState(getProgress());
+  const [filterCategory, setFilterCategory] = useState('All');
+
+  const completedCount = useMemo(() => progress.completedModules.length, [progress]);
+
+  const categories = useMemo(() => {
+    const cats = new Set(modules.map(m => m.category));
+    return ['All', ...cats];
+  }, []);
+
+  const filteredModules = useMemo(() => {
+    if (filterCategory === 'All') return modules;
+    return modules.filter(m => m.category === filterCategory);
+  }, [filterCategory]);
+
+  const markComplete = (modId, score, total) => {
+    const updated = { ...progress };
+    if (!updated.completedModules.includes(modId)) {
+      updated.completedModules = [...updated.completedModules, modId];
+    }
+    if (score !== undefined) {
+      updated.quizScores = { ...updated.quizScores, [modId]: `${score}/${total}` };
+    }
     setProgress(updated);
+    saveProgress(updated);
   };
 
-  if (selectedTopic) {
-    const topic = learnContent.find(t => t.id === selectedTopic);
-    if (!topic) return null;
+  if (selectedModule) {
+    const mod = modules.find(m => m.id === selectedModule);
+    if (!mod) return null;
     return (
       <div className="learn-page page-container">
-        <ModuleView 
-          topic={topic} 
-          onBack={() => setSelectedTopic(null)}
-          onComplete={() => markComplete(topic.id)}
+        <ModuleView
+          mod={mod}
+          onBack={() => setSelectedModule(null)}
+          onComplete={(score, total) => markComplete(mod.id, score, total)}
         />
       </div>
     );
@@ -189,18 +227,32 @@ export default function Learn() {
     <div className="learn-page page-container">
       <div className="page-header">
         <h1 className="page-title">📚 F1 Learn</h1>
-        <p className="page-subtitle">Master the fundamentals of Formula 1 racing</p>
+        <p className="page-subtitle">Master the fundamentals of Formula 1 — updated for 2026</p>
       </div>
 
-      <ProgressBar completed={completedCount} total={learnContent.length} />
+      <ProgressBar completed={completedCount} total={modules.length} />
+
+      {/* Category filter */}
+      <div className="category-filter">
+        {categories.map(cat => (
+          <button
+            key={cat}
+            className={`category-chip ${filterCategory === cat ? 'active' : ''}`}
+            onClick={() => setFilterCategory(cat)}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
 
       <section className="topics-grid">
-        {learnContent.map(topic => (
+        {filteredModules.map(mod => (
           <TopicCard
-            key={topic.id}
-            topic={topic}
-            isCompleted={!!progress[topic.id]}
-            onClick={() => setSelectedTopic(topic.id)}
+            key={mod.id}
+            mod={mod}
+            isCompleted={progress.completedModules.includes(mod.id)}
+            quizScore={progress.quizScores[mod.id]}
+            onClick={() => setSelectedModule(mod.id)}
           />
         ))}
       </section>

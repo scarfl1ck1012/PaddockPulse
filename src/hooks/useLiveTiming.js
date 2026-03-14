@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import * as api from '../services/api';
+
+const OPENF1_BASE = 'https://api.openf1.org/v1';
 
 /**
- * useLiveTiming — manages all polling for live session data
- * Uses delta-fetching with date> filter to avoid re-fetching old data.
- * All intervals are cleaned up on unmount.
+ * useLiveTiming — manages all live session data polling
+ * 
+ * Three polling tiers:
+ * - Fast (2s):  intervals, race_control, car_data (delta with date> filter)
+ * - Medium (8s): laps, stints, weather (full refetch — smaller payloads)
+ * - Slow (once): drivers (static per session)
  */
 export default function useLiveTiming(sessionKey) {
   const [drivers, setDrivers] = useState([]);
@@ -12,120 +16,133 @@ export default function useLiveTiming(sessionKey) {
   const [intervals, setIntervals] = useState([]);
   const [laps, setLaps] = useState([]);
   const [stints, setStints] = useState([]);
-  const [pitStops, setPitStops] = useState([]);
   const [raceControl, setRaceControl] = useState([]);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const pollRef = useRef(null);
-  const lastPollRef = useRef(null);
+  const fastPollRef = useRef(null);
+  const slowPollRef = useRef(null);
+  const lastFastPollRef = useRef(null);
 
-  // Initial data load
-  const loadInitialData = useCallback(async (key) => {
+  // Helper: fetch with error handling
+  const f1Fetch = useCallback(async (endpoint) => {
+    try {
+      const res = await fetch(`${OPENF1_BASE}${endpoint}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (data?.detail) return []; // OpenF1 error response
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  // Fetch static data ONCE per session
+  const loadStaticData = useCallback(async (key) => {
     if (!key) return;
     setLoading(true);
     setError(null);
 
     try {
-      const [driversData, posData, intervalData, lapsData, stintsData, pitData, rcData, weatherData] = await Promise.all([
-        api.fetchDriversLive(key),
-        api.fetchPositionsLive(key),
-        api.fetchIntervalsLive(key),
-        api.fetchLapsLive(key),
-        api.fetchStintsLive(key),
-        api.fetchPitStopsLive(key),
-        api.fetchRaceControlLive(key),
-        api.fetchWeatherLive(key),
+      const [driversData, posData, intervalData, lapsData, stintsData, rcData, weatherData] = await Promise.all([
+        f1Fetch(`/drivers?session_key=${key}`),
+        f1Fetch(`/position?session_key=${key}`),
+        f1Fetch(`/intervals?session_key=${key}`),
+        f1Fetch(`/laps?session_key=${key}`),
+        f1Fetch(`/stints?session_key=${key}`),
+        f1Fetch(`/race_control?session_key=${key}`),
+        f1Fetch(`/weather?session_key=${key}`),
       ]);
 
-      setDrivers(Array.isArray(driversData) ? driversData : []);
-      setPositions(Array.isArray(posData) ? posData : []);
-      setIntervals(Array.isArray(intervalData) ? intervalData : []);
-      setLaps(Array.isArray(lapsData) ? lapsData : []);
-      setStints(Array.isArray(stintsData) ? stintsData : []);
-      setPitStops(Array.isArray(pitData) ? pitData : []);
-      setRaceControl(Array.isArray(rcData) ? rcData : []);
-      
-      if (Array.isArray(weatherData) && weatherData.length > 0) {
-        setWeather(weatherData[weatherData.length - 1]);
-      }
+      setDrivers(driversData);
+      setPositions(posData);
+      setIntervals(intervalData);
+      setLaps(lapsData);
+      setStints(stintsData);
+      setRaceControl(rcData);
+      if (weatherData.length > 0) setWeather(weatherData[weatherData.length - 1]);
 
-      lastPollRef.current = new Date().toISOString();
+      lastFastPollRef.current = new Date().toISOString();
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [f1Fetch]);
 
-  // Poll for updates (delta fetch)
-  const pollUpdates = useCallback(async (key) => {
-    if (!key || !lastPollRef.current) return;
+  // Fast poll: delta-fetch intervals + race_control + positions (every 2s)
+  const fastPoll = useCallback(async (key) => {
+    if (!key) return;
+    const since = lastFastPollRef.current;
+    const dateFilter = since ? `&date>${since}` : '';
 
     try {
-      const since = lastPollRef.current;
-
-      const [posData, intervalData, rcData, weatherData, stintsData, lapsData] = await Promise.all([
-        api.fetchPositionsLive(key),
-        api.fetchIntervalsLive(key),
-        api.fetchRaceControlLive(key),
-        api.fetchWeatherLive(key),
-        api.fetchStintsLive(key),
-        api.fetchLapsLive(key),
+      const [intData, rcData, posData] = await Promise.all([
+        f1Fetch(`/intervals?session_key=${key}${dateFilter}`),
+        f1Fetch(`/race_control?session_key=${key}${dateFilter}`),
+        f1Fetch(`/position?session_key=${key}${dateFilter}`),
       ]);
 
-      // Merge positions — keep latest per driver
-      if (Array.isArray(posData) && posData.length > 0) {
-        setPositions(posData);
+      if (intData.length > 0) {
+        setIntervals(prev => mergeByDriver(prev, intData, 'driver_number'));
       }
 
-      if (Array.isArray(intervalData) && intervalData.length > 0) {
-        setIntervals(intervalData);
+      if (rcData.length > 0) {
+        setRaceControl(prev => [...prev, ...rcData]);
       }
 
-      if (Array.isArray(lapsData) && lapsData.length > 0) {
-        setLaps(lapsData);
+      if (posData.length > 0) {
+        setPositions(prev => mergeByDriver(prev, posData, 'driver_number'));
       }
 
-      if (Array.isArray(stintsData) && stintsData.length > 0) {
-        setStints(stintsData);
-      }
-
-      if (Array.isArray(rcData) && rcData.length > 0) {
-        setRaceControl(rcData);
-      }
-
-      if (Array.isArray(weatherData) && weatherData.length > 0) {
-        setWeather(weatherData[weatherData.length - 1]);
-      }
-
-      lastPollRef.current = new Date().toISOString();
+      lastFastPollRef.current = new Date().toISOString();
     } catch (err) {
-      console.error('Poll error:', err);
+      console.error('Fast poll error:', err);
     }
-  }, []);
+  }, [f1Fetch]);
 
-  // Setup polling
+  // Slow poll: refetch laps, stints, weather (every 8s)
+  const slowPoll = useCallback(async (key) => {
+    if (!key) return;
+
+    try {
+      const [lapsData, stintsData, weatherData] = await Promise.all([
+        f1Fetch(`/laps?session_key=${key}`),
+        f1Fetch(`/stints?session_key=${key}`),
+        f1Fetch(`/weather?session_key=${key}`),
+      ]);
+
+      if (lapsData.length > 0) setLaps(lapsData);
+      if (stintsData.length > 0) setStints(stintsData);
+      if (weatherData.length > 0) setWeather(weatherData[weatherData.length - 1]);
+    } catch (err) {
+      console.error('Slow poll error:', err);
+    }
+  }, [f1Fetch]);
+
+  // Setup polling lifecycle
   useEffect(() => {
     if (!sessionKey) {
       setLoading(false);
       return;
     }
 
-    loadInitialData(sessionKey);
+    loadStaticData(sessionKey);
 
-    // Poll every 5 seconds
-    pollRef.current = setInterval(() => {
-      pollUpdates(sessionKey);
-    }, 5000);
+    // Fast poll every 2 seconds
+    fastPollRef.current = setInterval(() => fastPoll(sessionKey), 2000);
+
+    // Slow poll every 8 seconds
+    slowPollRef.current = setInterval(() => slowPoll(sessionKey), 8000);
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      clearInterval(fastPollRef.current);
+      clearInterval(slowPollRef.current);
     };
-  }, [sessionKey, loadInitialData, pollUpdates]);
+  }, [sessionKey, loadStaticData, fastPoll, slowPoll]);
 
-  // Build leaderboard from positions and drivers
+  // Build leaderboard from all data sources
   const leaderboard = buildLeaderboard(drivers, positions, intervals, laps, stints);
 
   return {
@@ -135,7 +152,6 @@ export default function useLiveTiming(sessionKey) {
     intervals,
     laps,
     stints,
-    pitStops,
     raceControl,
     weather,
     loading,
@@ -143,65 +159,83 @@ export default function useLiveTiming(sessionKey) {
   };
 }
 
-// Build sorted leaderboard from various data sources
+// --- Helpers ---
+
+/** Merge new data, keeping latest per driver */
+function mergeByDriver(prevArr, newArr, driverField) {
+  const map = new Map();
+  // Add existing
+  prevArr.forEach(item => {
+    const key = item[driverField];
+    const existing = map.get(key);
+    if (!existing || new Date(item.date) > new Date(existing.date)) {
+      map.set(key, item);
+    }
+  });
+  // Overwrite with newer
+  newArr.forEach(item => {
+    const key = item[driverField];
+    const existing = map.get(key);
+    if (!existing || new Date(item.date) > new Date(existing.date)) {
+      map.set(key, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+/** Build sorted leaderboard from raw OpenF1 data */
 function buildLeaderboard(drivers, positions, intervals, laps, stints) {
   if (!drivers.length) return [];
 
-  // Get latest position per driver
-  const latestPositions = {};
+  // Latest position per driver
+  const latestPos = {};
   positions.forEach(p => {
-    const existing = latestPositions[p.driver_number];
-    if (!existing || new Date(p.date) > new Date(existing.date)) {
-      latestPositions[p.driver_number] = p;
-    }
+    const e = latestPos[p.driver_number];
+    if (!e || new Date(p.date) > new Date(e.date)) latestPos[p.driver_number] = p;
   });
 
-  // Get latest interval per driver
-  const latestIntervals = {};
+  // Latest interval per driver
+  const latestInt = {};
   intervals.forEach(i => {
-    const existing = latestIntervals[i.driver_number];
-    if (!existing || new Date(i.date) > new Date(existing.date)) {
-      latestIntervals[i.driver_number] = i;
-    }
+    const e = latestInt[i.driver_number];
+    if (!e || new Date(i.date) > new Date(e.date)) latestInt[i.driver_number] = i;
   });
 
-  // Get latest lap per driver
-  const latestLaps = {};
+  // Latest & best lap per driver
+  const latestLap = {};
+  const bestLap = {};
   laps.forEach(l => {
-    const existing = latestLaps[l.driver_number];
-    if (!existing || l.lap_number > existing.lap_number) {
-      latestLaps[l.driver_number] = l;
+    const e = latestLap[l.driver_number];
+    if (!e || l.lap_number > e.lap_number) latestLap[l.driver_number] = l;
+    if (l.lap_duration && (!bestLap[l.driver_number] || l.lap_duration < bestLap[l.driver_number].lap_duration)) {
+      bestLap[l.driver_number] = l;
     }
   });
 
-  // Get best lap per driver
-  const bestLaps = {};
-  laps.forEach(l => {
-    if (!l.lap_duration) return;
-    const existing = bestLaps[l.driver_number];
-    if (!existing || l.lap_duration < existing.lap_duration) {
-      bestLaps[l.driver_number] = l;
-    }
-  });
-
-  // Get latest stint per driver
-  const latestStints = {};
+  // Latest stint per driver
+  const latestStint = {};
   stints.forEach(s => {
-    const existing = latestStints[s.driver_number];
-    if (!existing || s.stint_number > existing.stint_number) {
-      latestStints[s.driver_number] = s;
+    const e = latestStint[s.driver_number];
+    if (!e || s.stint_number > e.stint_number) latestStint[s.driver_number] = s;
+  });
+
+  // Deduplicate drivers
+  const uniqueDrivers = [];
+  const seen = new Set();
+  drivers.forEach(d => {
+    if (!seen.has(d.driver_number)) {
+      seen.add(d.driver_number);
+      uniqueDrivers.push(d);
     }
   });
 
-  // Build leaderboard entries
-  const entries = drivers
-    .filter((d, i, arr) => arr.findIndex(x => x.driver_number === d.driver_number) === i)
+  return uniqueDrivers
     .map(driver => {
-      const pos = latestPositions[driver.driver_number];
-      const interval = latestIntervals[driver.driver_number];
-      const lap = latestLaps[driver.driver_number];
-      const best = bestLaps[driver.driver_number];
-      const stint = latestStints[driver.driver_number];
+      const pos = latestPos[driver.driver_number];
+      const intv = latestInt[driver.driver_number];
+      const lap = latestLap[driver.driver_number];
+      const best = bestLap[driver.driver_number];
+      const stint = latestStint[driver.driver_number];
 
       return {
         driverNumber: driver.driver_number,
@@ -210,22 +244,19 @@ function buildLeaderboard(drivers, positions, intervals, laps, stints) {
         teamName: driver.team_name || '',
         teamColor: driver.team_colour ? `#${driver.team_colour}` : '#666',
         position: pos?.position || 99,
-        gap: interval?.gap_to_leader != null ? `+${interval.gap_to_leader}s` : '',
-        interval: interval?.interval != null ? `+${interval.interval}s` : '',
-        lastLap: lap?.lap_duration ? formatDuration(lap.lap_duration) : '—',
-        bestLap: best?.lap_duration ? formatDuration(best.lap_duration) : '—',
+        gap: intv?.gap_to_leader != null ? (intv.gap_to_leader === 0 ? '' : `+${intv.gap_to_leader}s`) : '',
+        interval: intv?.interval != null ? `+${intv.interval}s` : '',
+        lastLap: lap?.lap_duration ? fmtDuration(lap.lap_duration) : '—',
+        bestLap: best?.lap_duration ? fmtDuration(best.lap_duration) : '—',
         lapNumber: lap?.lap_number || 0,
         compound: stint?.compound || '',
-        tyreAge: stint?.tyre_age_at_pit || 0,
-        isPitIn: stint?.pit_in || false,
+        tyreAge: stint?.tyre_age_at_pit || stint?.lap_end ? (stint.lap_end - stint.lap_start + 1) : 0,
       };
     })
     .sort((a, b) => a.position - b.position);
-
-  return entries;
 }
 
-function formatDuration(seconds) {
+function fmtDuration(seconds) {
   if (!seconds || seconds <= 0) return '—';
   const mins = Math.floor(seconds / 60);
   const secs = (seconds % 60).toFixed(3);

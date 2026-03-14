@@ -258,7 +258,7 @@
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
@@ -282,9 +282,160 @@
   font-size: var(--text-sm);
 }
 
+.status-dnf {
+  color: var(--danger);
+}
+
+/* Race Chips Scrollable */
+.race-selector-group {
+  flex: 3;
+}
+
+.race-chips-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+.race-chips-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.race-chips-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+}
+
+.race-chip {
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-medium);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition-fast);
+}
+
+.race-chip:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.race-chip.active {
+  background: rgba(225, 6, 0, 0.15);
+  border-color: var(--f1-red);
+  color: white;
+}
+
+.chip-loading {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  padding: 6px 12px;
+}
+
+/* Tyre Strategy Chart */
+.tyre-strategy-chart {
+  padding: var(--space-4);
+}
+
+.tyre-strategy-chart h4 {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.strategy-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.strategy-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.strategy-driver {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: var(--text-xs);
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.strategy-bar {
+  flex: 1;
+  display: flex;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.stint-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  cursor: help;
+  transition: filter 0.2s ease;
+  border-right: 1px solid rgba(0,0,0,0.3);
+}
+
+.stint-segment:last-child {
+  border-right: none;
+}
+
+.stint-segment:hover {
+  filter: brightness(1.2);
+}
+
+.stint-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.strategy-legend {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Full width charts */
+.compare-charts-grid.full-width {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 600px) {
   .driver-stat-card .stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .compare-drivers-header {
+    flex-direction: column;
+  }
 }
-
